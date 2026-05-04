@@ -1,122 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from 'react';
+import io from 'socket.io-client';
+
+const socket = io('localhost:5000');
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    socket.on('new_attendance', (data) => {
+      // Add new record to the top of the list
+      setLogs((prevLogs) => [
+        { ...data, timestamp: new Date().toLocaleTimeString() },
+        ...prevLogs.slice(0, 9), // Keep last 10 entries
+      ]);
+    });
+
+    return () => socket.off('new_attendance');
+  }, []);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="min-h-screen bg-black text-green-500 p-8 font-mono">
+      <header className="flex justify-between border-b border-green-900 pb-4 mb-8">
+        <h1 className="text-2xl font-bold tracking-widest">SYSTEM_FACE_RECOG_v2.0</h1>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+          <span className="text-xs">LIVE_FEED</span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Feed Section */}
+        <div className="lg:col-span-2">
+          <div className="border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] rounded-lg overflow-hidden bg-zinc-900">
+            <img 
+              src="http://localhost:5000/video_feed" 
+              alt="Feed" 
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Attendance Sidebar */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold border-l-4 border-green-500 pl-3">RECENT_LOGS</h2>
+          <div className="space-y-3">
+            {logs.length === 0 ? (
+              <p className="text-zinc-600 italic">Waiting for detection...</p>
+            ) : (
+              logs.map((log, index) => (
+                <div 
+                  key={index} 
+                  className="bg-zinc-900 border border-green-900 p-4 rounded flex justify-between items-center animate-in fade-in slide-in-from-right-4 duration-500"
+                >
+                  <div>
+                    <p className="text-white font-bold">{log.name}</p>
+                    <p className="text-[10px] text-green-600 uppercase">{log.status}</p>
+                  </div>
+                  <span className="text-xs text-zinc-500">{log.timestamp}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
