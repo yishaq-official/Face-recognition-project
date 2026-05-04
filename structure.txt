@@ -1,0 +1,12 @@
+Face-recognition-project/
+├── backend/
+│   ├── app.py             # Flask Main Entry Point
+│   ├── database.py        # MongoDB connection & attendance logic
+│   ├── engine.py          # Face recognition & OpenCV processing
+│   ├── enroll.py          # Enrollment script
+│   ├── requirements.txt   # Backend dependencies
+│   ├── faces/             # Source images for enrollment
+│   └── venv/              # Python Virtual Environment
+└── frontend/
+    ├── templates/         # HTML Files (index.html, etc.)
+    └── static/            # Assets (CSS, JS, registered images)
