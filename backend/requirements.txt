@@ -1,0 +1,7 @@
+face_recognition
+opencv-python
+pymongo
+flask
+flask-socketio
+eventlet
+dlib
