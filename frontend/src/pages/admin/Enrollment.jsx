@@ -43,25 +43,32 @@ export default function Enrollment() {
     payload.append('personnel_data', JSON.stringify(personnelData));
 
     try {
+      console.log("[SYSTEM] Payload sent to Security Server...");
       const response = await fetch('http://localhost:5000/api/verify_and_enroll', {
         method: 'POST',
         body: payload,
       });
+      
+      console.log(`[SYSTEM] Raw response received: ${response.status}`);
       const data = await response.json();
+      console.log("[SYSTEM] Data parsed:", data);
       
       if (response.ok) {
+        console.log("[SYSTEM] Triggering Success Modal!");
         setStatus('success');
         setMessage(data.message);
         // Reset the form in the background
         setFormData({ ...formData, firstName: '', lastName: '', employeeId: `AGS-${Math.floor(Math.random() * 9000) + 1000}` });
         setFile(null);
       } else {
+        console.log("[SYSTEM] Triggering Error Modal!");
         setStatus('error');
         setMessage(data.message || 'Verification failed.');
       }
     } catch (err) {
+      console.error("[CRITICAL FETCH ERROR]:", err);
       setStatus('error');
-      setMessage('CRITICAL ERROR: Unable to contact Security Server. Check network connection.');
+      setMessage(`Connection Error: ${err.message}`);
     }
   };
 
@@ -75,7 +82,7 @@ export default function Enrollment() {
     <div style={{ fontFamily: 'monospace', width: '100%', boxSizing: 'border-box', color: '#a0ffb0', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
 
       {/* =========================================
-          THE FULL-SCREEN ALERT MODAL (NEW)
+          THE FULL-SCREEN ALERT MODAL
       ========================================= */}
       {(status === 'success' || status === 'error') && (
         <div style={{
