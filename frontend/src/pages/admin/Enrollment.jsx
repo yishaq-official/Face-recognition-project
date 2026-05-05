@@ -9,6 +9,7 @@ export default function Enrollment() {
     clearance: 'UNCLASSIFIED'
   }));
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null); // NEW: State to hold the image preview
   const [status, setStatus] = useState('idle'); // idle, enrolling, success, error
   const [message, setMessage] = useState('');
 
@@ -18,7 +19,10 @@ export default function Enrollment() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      // NEW: Generate a local URL to preview the image
+      setPreviewUrl(URL.createObjectURL(selectedFile)); 
     }
   };
 
@@ -51,17 +55,15 @@ export default function Enrollment() {
       
       console.log(`[SYSTEM] Raw response received: ${response.status}`);
       const data = await response.json();
-      console.log("[SYSTEM] Data parsed:", data);
       
       if (response.ok) {
-        console.log("[SYSTEM] Triggering Success Modal!");
         setStatus('success');
         setMessage(data.message);
         // Reset the form in the background
         setFormData({ ...formData, firstName: '', lastName: '', employeeId: `AGS-${Math.floor(Math.random() * 9000) + 1000}` });
         setFile(null);
+        setPreviewUrl(null); // Clear preview
       } else {
-        console.log("[SYSTEM] Triggering Error Modal!");
         setStatus('error');
         setMessage(data.message || 'Verification failed.');
       }
@@ -72,7 +74,6 @@ export default function Enrollment() {
     }
   };
 
-  // Function to dismiss the modal and get ready for the next person
   const dismissModal = () => {
     setStatus('idle');
     setMessage('');
@@ -97,7 +98,6 @@ export default function Enrollment() {
             padding: '40px', borderRadius: '8px', maxWidth: '500px', width: '90%', textAlign: 'center',
             position: 'relative', overflow: 'hidden'
           }}>
-            {/* Modal Scanlines */}
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 4px)' }} />
             
             {status === 'success' ? (
@@ -168,7 +168,6 @@ export default function Enrollment() {
 
           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-            {/* Name Row */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>First Name</label>
@@ -182,7 +181,6 @@ export default function Enrollment() {
               </div>
             </div>
 
-            {/* ID / Clearance Row */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>Agent ID (Auto-Gen)</label>
@@ -200,18 +198,30 @@ export default function Enrollment() {
               </div>
             </div>
 
-            {/* Upload Zone */}
+            {/* UPGRADED UPLOAD ZONE WITH IMAGE PREVIEW & SCANNER */}
             <div>
               <label style={labelStyle}>Official ID Photo Reference</label>
-              <div style={{ border: '1px dashed #1aff5a55', borderRadius: '6px', padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 10, 4, 0.6)', position: 'relative', cursor: 'pointer', minHeight: '110px', transition: 'all 0.3s' }}
+              <div style={{ border: '1px dashed #1aff5a55', borderRadius: '6px', padding: file ? '16px' : '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 10, 4, 0.6)', position: 'relative', cursor: 'pointer', minHeight: '110px', transition: 'all 0.3s' }}
                 onMouseEnter={e => {e.currentTarget.style.borderColor = '#1aff5a'; e.currentTarget.style.background = 'rgba(2, 10, 4, 0.9)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(26,255,90,0.05) inset';}} onMouseLeave={e => {e.currentTarget.style.borderColor = '#1aff5a55'; e.currentTarget.style.background = 'rgba(2, 10, 4, 0.6)'; e.currentTarget.style.boxShadow = 'none';}}>
                 <input type="file" accept="image/jpeg, image/png" onChange={handleFileChange}
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
-                {file ? (
-                  <div style={{ textAlign: 'center' }}>
-                    <CheckCircle style={{ margin: '0 auto 8px', color: '#1aff5a', display: 'block', filter: 'drop-shadow(0 0 5px rgba(26,255,90,0.5))' }} size={32} />
-                    <p style={{ color: '#a0ffb0', fontWeight: 'bold', fontSize: '13px', letterSpacing: '0.1em' }}>{file.name}</p>
-                    <p style={{ fontSize: '10px', color: '#3aff6a77', marginTop: '4px', letterSpacing: '0.15em' }}>READY FOR VERIFICATION</p>
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 5 }} />
+                
+                {previewUrl ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', width: '100%' }}>
+                    {/* The Image Preview with Scanner Box */}
+                    <div style={{ position: 'relative', width: '70px', height: '90px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #1aff5a88', boxShadow: '0 0 10px rgba(26,255,90,0.2)' }}>
+                      <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.5) contrast(1.2)' }} />
+                      {/* The Magic Scanner Line */}
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#1aff5a', boxShadow: '0 0 8px #1aff5a', animation: 'scan 2s infinite linear' }} />
+                    </div>
+                    {/* Details to the right */}
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: '#a0ffb0', fontWeight: 'bold', fontSize: '13px', letterSpacing: '0.1em', marginBottom: '4px' }}>{file.name}</p>
+                      <p style={{ fontSize: '10px', color: '#1aff5a', display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.15em' }}>
+                        <CheckCircle size={12} /> HASH VERIFIED
+                      </p>
+                      <p style={{ fontSize: '9px', color: '#3aff6a55', marginTop: '6px' }}>CLICK TO REPLACE</p>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
@@ -223,7 +233,6 @@ export default function Enrollment() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button type="submit" disabled={status === 'enrolling'} style={{
               width: '100%', background: '#1aff5a', color: '#010502', border: 'none', borderRadius: '4px',
               padding: '16px', fontFamily: 'monospace', fontSize: '13px', letterSpacing: '0.25em',
@@ -255,10 +264,15 @@ export default function Enrollment() {
             </div>
           </div>
 
-          {/* Video Area */}
           <div style={{ flex: 1, background: '#010502', position: 'relative', minHeight: '320px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src="http://localhost:5000/video_feed" alt="Live Scanner"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, filter: 'grayscale(1) contrast(1.2)' }} />
+            
+            {/* NEW: Secondary Warning Scanner during Enrollment! */}
+            {status === 'enrolling' && (
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: '#ffe066', boxShadow: '0 0 20px #ffe066', animation: 'scanFast 1.5s infinite linear', zIndex: 10 }} />
+            )}
+
             <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.05 }}>
               <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1aff5a" strokeWidth="1" /></pattern></defs>
               <rect width="100%" height="100%" fill="url(#grid)" />
@@ -266,7 +280,7 @@ export default function Enrollment() {
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(26,255,90,0.05) 4px)' }} />
             
             {/* Reticle */}
-            <div style={{ position: 'relative', width: '130px', height: '130px' }}>
+            <div style={{ position: 'relative', width: '130px', height: '130px', transition: 'all 0.3s', filter: status === 'enrolling' ? 'drop-shadow(0 0 10px #ffe066)' : 'none' }}>
               {[['0,0','top:0,left:0','borderTopWidth:2px,borderLeftWidth:2px'],
                 ['0,0','top:0,right:0','borderTopWidth:2px,borderRightWidth:2px'],
                 ['0,0','bottom:0,left:0','borderBottomWidth:2px,borderLeftWidth:2px'],
@@ -276,16 +290,18 @@ export default function Enrollment() {
                   return <div key={i} style={{ position: 'absolute', width: '25px', height: '25px', filter: 'drop-shadow(0 0 3px #1aff5a)', ...pos, ...borders }} />;
                 })}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
-                  <circle cx="25" cy="25" r="22" stroke="rgba(26,255,90,0.6)" strokeWidth="1" strokeDasharray="4 6" />
-                  <circle cx="25" cy="25" r="2.5" fill="rgba(26,255,90,0.8)" />
-                  <line x1="25" y1="10" x2="25" y2="18" stroke="rgba(26,255,90,0.8)" strokeWidth="1" />
-                  <line x1="25" y1="32" x2="25" y2="40" stroke="rgba(26,255,90,0.8)" strokeWidth="1" />
-                  <line x1="10" y1="25" x2="18" y2="25" stroke="rgba(26,255,90,0.8)" strokeWidth="1" />
-                  <line x1="32" y1="25" x2="40" y2="25" stroke="rgba(26,255,90,0.8)" strokeWidth="1" />
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" style={{ animation: status === 'enrolling' ? 'spin 2s linear infinite' : 'none' }}>
+                  <circle cx="25" cy="25" r="22" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.6)'} strokeWidth="1" strokeDasharray="4 6" />
+                  <circle cx="25" cy="25" r="2.5" fill={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} />
+                  <line x1="25" y1="10" x2="25" y2="18" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
+                  <line x1="25" y1="32" x2="25" y2="40" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
+                  <line x1="10" y1="25" x2="18" y2="25" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
+                  <line x1="32" y1="25" x2="40" y2="25" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
                 </svg>
               </div>
-              <div style={{ position: 'absolute', bottom: '-24px', left: 0, right: 0, textAlign: 'center', fontSize: '9px', letterSpacing: '0.25em', color: '#3aff6a88' }}>AWAITING SUBJECT</div>
+              <div style={{ position: 'absolute', bottom: '-24px', left: 0, right: 0, textAlign: 'center', fontSize: '9px', letterSpacing: '0.25em', color: status === 'enrolling' ? '#ffe066' : '#3aff6a88' }}>
+                {status === 'enrolling' ? 'COMPARING VECTORS' : 'AWAITING SUBJECT'}
+              </div>
             </div>
             
             <div style={{ position: 'absolute', top: '16px', left: '16px' }}>
@@ -299,7 +315,6 @@ export default function Enrollment() {
             <div style={{ position: 'absolute', bottom: '16px', left: '16px', fontSize: '9px', letterSpacing: '0.15em', color: '#1aff5a66' }}>FACIAL RECOGNITION ACTIVE</div>
           </div>
 
-          {/* Console Output */}
           <div style={{ padding: '16px 20px', background: 'rgba(2, 10, 4, 0.9)', borderTop: '1px solid #1aff5a22', minHeight: '120px', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.8 }}>
             <p style={{ color: '#3aff6a55' }}>// SYSTEM READY</p>
             <p style={{ color: '#3aff6a55' }}>// AWAITING SUBJECT POSITIONING...</p>
@@ -314,30 +329,23 @@ export default function Enrollment() {
         </div>
       </div>
 
+      {/* NEW: Added Keyframes for Scanners! */}
       <style>{`
         @keyframes ping { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(2.2); opacity: 0; } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+        @keyframes scanFast { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
         select option { background: #030805; color: #a0ffb0; }
       `}</style>
     </div>
   );
 }
 
-// --- Helper sub-components ---
-
-const labelStyle = {
-  display: 'block', fontSize: '10px', letterSpacing: '0.25em',
-  color: '#3aff6a88', textTransform: 'uppercase', marginBottom: '8px'
-};
-
-const inputStyle = {
-  width: '100%', background: 'rgba(2, 10, 4, 0.6)', border: '1px solid #1aff5a44',
-  borderRadius: '4px', padding: '12px 14px', color: '#a0ffb0',
-  fontFamily: 'monospace', fontSize: '14px', outline: 'none',
-  transition: 'all 0.3s', boxSizing: 'border-box'
-};
+const labelStyle = { display: 'block', fontSize: '10px', letterSpacing: '0.25em', color: '#3aff6a88', textTransform: 'uppercase', marginBottom: '8px' };
+const inputStyle = { width: '100%', background: 'rgba(2, 10, 4, 0.6)', border: '1px solid #1aff5a44', borderRadius: '4px', padding: '12px 14px', color: '#a0ffb0', fontFamily: 'monospace', fontSize: '14px', outline: 'none', transition: 'all 0.3s', boxSizing: 'border-box' };
 
 function ClockDisplay() {
   const [time, setTime] = useState('');
