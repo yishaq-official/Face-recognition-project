@@ -150,7 +150,61 @@ def verify_and_enroll():
     except Exception as e:
         print(f"[ENROLLMENT ERROR]: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+# =========================================================================
+# ADMIN API: PERSONNEL MANAGEMENT (CRUD)
+# =========================================================================
 
+@app.route('/api/members', methods=['GET'])
+def get_members():
+    """Fetches all classified personnel records from MongoDB."""
+    try:
+        # Fetch all users, excluding the raw encoding array to keep response light
+        users_cursor = UserModel.collection.find({}, {"encoding": 0})
+        users_list = []
+        
+        for user in users_cursor:
+            # Convert ObjectId to string for JSON serialization
+            user["_id"] = str(user["_id"])
+            
+            # Formulate the correct static URL for the image
+            if "image_path" in user:
+                # Assuming image_path is like 'static/uploads/filename.jpg'
+                filename = os.path.basename(user["image_path"])
+                user["image_url"] = f"http://localhost:5000/static/uploads/{filename}"
+                
+            users_list.append(user)
+            
+        return jsonify(users_list), 200
+    except Exception as e:
+        print(f"[API ERROR]: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/members/<employee_id>', methods=['DELETE'])
+def revoke_access(employee_id):
+    """Permanently deletes an agent record and their ID photo."""
+    try:
+        # 1. Find user to get image path before deletion
+        user = UserModel.collection.find_one({"employee_id": employee_id})
+        if not user:
+            return jsonify({"success": False, "message": "Agent not found."}), 404
+
+        # 2. Delete the physical image file
+        if "image_path" in user and os.path.exists(user["image_path"]):
+            os.remove(user["image_path"])
+            print(f"[API] Deleted photo: {user['image_path']}")
+
+        # 3. Delete record from MongoDB
+        UserModel.collection.delete_one({"employee_id": employee_id})
+        print(f"[API] Revoked access for Agent ID: {employee_id}")
+
+        # 4. CRITICAL: Hot-reload AI Engine memory so they are no longer recognized
+        engine.load_known_faces()
+
+        return jsonify({"success": True, "message": f"Access revoked for Agent {employee_id}. matrices purged."}), 200
+        
+    except Exception as e:
+        print(f"[API ERROR]: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
 # =========================================================================
 # SERVER EXECUTION
 # =========================================================================
