@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Camera, AlertTriangle, CheckCircle, Fingerprint } from 'lucide-react';
+import { Upload, Camera, AlertTriangle, CheckCircle, Fingerprint, ShieldCheck, XOctagon } from 'lucide-react';
 
 export default function Enrollment() {
   const [formData, setFormData] = useState(() => ({
@@ -9,7 +9,7 @@ export default function Enrollment() {
     clearance: 'UNCLASSIFIED'
   }));
   const [file, setFile] = useState(null);
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState('idle'); // idle, enrolling, success, error
   const [message, setMessage] = useState('');
 
   const handleInputChange = (e) => {
@@ -48,9 +48,11 @@ export default function Enrollment() {
         body: payload,
       });
       const data = await response.json();
+      
       if (response.ok) {
         setStatus('success');
         setMessage(data.message);
+        // Reset the form in the background
         setFormData({ ...formData, firstName: '', lastName: '', employeeId: `AGS-${Math.floor(Math.random() * 9000) + 1000}` });
         setFile(null);
       } else {
@@ -59,12 +61,77 @@ export default function Enrollment() {
       }
     } catch (err) {
       setStatus('error');
-      setMessage('CRITICAL ERROR: Unable to contact Security Server.');
+      setMessage('CRITICAL ERROR: Unable to contact Security Server. Check network connection.');
     }
   };
 
+  // Function to dismiss the modal and get ready for the next person
+  const dismissModal = () => {
+    setStatus('idle');
+    setMessage('');
+  };
+
   return (
-    <div style={{ fontFamily: 'monospace', width: '100%', boxSizing: 'border-box', color: '#a0ffb0', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ fontFamily: 'monospace', width: '100%', boxSizing: 'border-box', color: '#a0ffb0', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+
+      {/* =========================================
+          THE FULL-SCREEN ALERT MODAL (NEW)
+      ========================================= */}
+      {(status === 'success' || status === 'error') && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(1, 5, 2, 0.85)',
+          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div style={{
+            background: '#020a04',
+            border: `2px solid ${status === 'success' ? '#1aff5a' : '#ff3a3a'}`,
+            boxShadow: `0 0 40px ${status === 'success' ? 'rgba(26,255,90,0.2)' : 'rgba(255,58,58,0.2)'}`,
+            padding: '40px', borderRadius: '8px', maxWidth: '500px', width: '90%', textAlign: 'center',
+            position: 'relative', overflow: 'hidden'
+          }}>
+            {/* Modal Scanlines */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 4px)' }} />
+            
+            {status === 'success' ? (
+              <ShieldCheck size={64} style={{ color: '#1aff5a', margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px #1aff5a)' }} />
+            ) : (
+              <XOctagon size={64} style={{ color: '#ff3a3a', margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px #ff3a3a)' }} />
+            )}
+
+            <h2 style={{ 
+              fontSize: '24px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 16px',
+              color: status === 'success' ? '#a0ffb0' : '#ff9999',
+              textShadow: `0 0 10px ${status === 'success' ? 'rgba(160,255,176,0.5)' : 'rgba(255,153,153,0.5)'}`
+            }}>
+              {status === 'success' ? 'ENROLLMENT VERIFIED' : 'SECURITY ALERT'}
+            </h2>
+            
+            <p style={{ fontSize: '14px', lineHeight: '1.6', color: status === 'success' ? '#3aff6a' : '#ff4a4a', letterSpacing: '0.1em', marginBottom: '30px', position: 'relative', zIndex: 10 }}>
+              {message}
+            </p>
+
+            <button onClick={dismissModal} style={{
+              background: status === 'success' ? 'rgba(26,255,90,0.1)' : 'rgba(255,58,58,0.1)',
+              border: `1px solid ${status === 'success' ? '#1aff5a' : '#ff3a3a'}`,
+              color: status === 'success' ? '#1aff5a' : '#ff3a3a',
+              padding: '12px 30px', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '0.2em',
+              textTransform: 'uppercase', cursor: 'pointer', borderRadius: '4px', position: 'relative', zIndex: 10,
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => {
+              e.target.style.background = status === 'success' ? '#1aff5a' : '#ff3a3a';
+              e.target.style.color = '#000';
+            }}
+            onMouseLeave={e => {
+              e.target.style.background = status === 'success' ? 'rgba(26,255,90,0.1)' : 'rgba(255,58,58,0.1)';
+              e.target.style.color = status === 'success' ? '#1aff5a' : '#ff3a3a';
+            }}>
+              ACKNOWLEDGE
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <header style={{ borderBottom: '1px solid #1aff5a33', paddingBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -185,17 +252,12 @@ export default function Enrollment() {
           <div style={{ flex: 1, background: '#010502', position: 'relative', minHeight: '320px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src="http://localhost:5000/video_feed" alt="Live Scanner"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, filter: 'grayscale(1) contrast(1.2)' }} />
-            {/* Grid overlay */}
             <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.05 }}>
-              <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1aff5a" strokeWidth="1" />
-                </pattern>
-              </defs>
+              <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1aff5a" strokeWidth="1" /></pattern></defs>
               <rect width="100%" height="100%" fill="url(#grid)" />
             </svg>
-            {/* Scanlines */}
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(26,255,90,0.05) 4px)' }} />
+            
             {/* Reticle */}
             <div style={{ position: 'relative', width: '130px', height: '130px' }}>
               {[['0,0','top:0,left:0','borderTopWidth:2px,borderLeftWidth:2px'],
@@ -218,7 +280,7 @@ export default function Enrollment() {
               </div>
               <div style={{ position: 'absolute', bottom: '-24px', left: 0, right: 0, textAlign: 'center', fontSize: '9px', letterSpacing: '0.25em', color: '#3aff6a88' }}>AWAITING SUBJECT</div>
             </div>
-            {/* HUD Items */}
+            
             <div style={{ position: 'absolute', top: '16px', left: '16px' }}>
               <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#1aff5a88' }}>RES 1920x1080</div>
               <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#1aff5a88', marginTop: '4px' }}>FPS 30.00</div>
@@ -235,32 +297,13 @@ export default function Enrollment() {
             <p style={{ color: '#3aff6a55' }}>// SYSTEM READY</p>
             <p style={{ color: '#3aff6a55' }}>// AWAITING SUBJECT POSITIONING...</p>
             {status === 'enrolling' && (
-              <p style={{ color: '#ffe066' }}>
+              <p style={{ color: '#ffe066', animation: 'pulse 1s infinite' }}>
                 // Extracting features from ID photo...<br />
                 // Capturing live frame...<br />
                 // Comparing 128-point matrices...
               </p>
             )}
-            {status === 'success' && (
-              <p style={{ color: '#1aff5a', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', textShadow: '0 0 5px rgba(26,255,90,0.3)' }}>
-                <CheckCircle size={16} /> {message}
-              </p>
-            )}
-            {status === 'error' && (
-              <p style={{ color: '#ff4a4a', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', textShadow: '0 0 5px rgba(255,74,74,0.3)' }}>
-                <AlertTriangle size={16} /> {message}
-              </p>
-            )}
           </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', borderTop: '1px solid #1aff5a11' }}>
-        <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#3aff6a44' }}>ARGUS-SEC v4.7.1 // AES-256 ENCRYPTED // ALL SESSIONS LOGGED</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1aff5a', boxShadow: '0 0 5px #1aff5a' }} />
-          <span style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#3aff6a66' }}>NODE ONLINE</span>
         </div>
       </div>
 
@@ -268,6 +311,7 @@ export default function Enrollment() {
         @keyframes ping { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(2.2); opacity: 0; } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         select option { background: #030805; color: #a0ffb0; }
       `}</style>
     </div>

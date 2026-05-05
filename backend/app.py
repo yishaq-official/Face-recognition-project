@@ -1,3 +1,7 @@
+# --- CRITICAL CONCURRENCY FIX: MUST BE AT THE VERY TOP ---
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import cv2
 import json
@@ -25,7 +29,7 @@ print("[SYSTEM] Initializing Hardware and AI Models...")
 engine = FaceRecognitionEngine()
 camera = cv2.VideoCapture(0)
 
-# --- NEW: Global variable to store the latest frame ---
+# Global variable to store the latest frame to prevent hardware locks
 latest_live_frame = None
 
 # =========================================================================
@@ -33,7 +37,7 @@ latest_live_frame = None
 # =========================================================================
 def gen_frames():
     """Generates the live video feed and pushes attendance events to React."""
-    global latest_live_frame # Declare global usage
+    global latest_live_frame 
     print("[SYSTEM] Video stream active.")
     
     while True:
@@ -41,7 +45,7 @@ def gen_frames():
         if not success:
             continue
             
-        # --- NEW: Save a copy of the frame for the API ---
+        # Save a copy of the frame for the API to use instantly
         latest_live_frame = frame.copy()
         
         try:
@@ -134,8 +138,10 @@ def verify_and_enroll():
         UserModel.create_user(personnel_data)
 
         # 8. Tell the AI Engine to reload its memory to include the new person immediately
+        print("[API] User saved to DB. Reloading AI matrices...")
         engine.load_known_faces()
 
+        print("[API] Enrollment complete. Sending 201 Success back to React.")
         return jsonify({
             "success": True, 
             "message": f"Agent {personnel_data['name']['last']} successfully enrolled and verified."
