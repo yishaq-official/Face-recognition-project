@@ -59,4 +59,5 @@ def video_feed():
 
 if __name__ == '__main__':
     print("[*] Starting Flask-SocketIO server on http://localhost:5000")
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    # Set use_reloader=False to prevent the double-start issue with webcams
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)
