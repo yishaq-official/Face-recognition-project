@@ -1,12 +1,25 @@
 Face-recognition-project/
 ├── backend/
-│   ├── app.py             # Flask Main Entry Point
-│   ├── database.py        # MongoDB connection & attendance logic
-│   ├── engine.py          # Face recognition & OpenCV processing
-│   ├── enroll.py          # Enrollment script
-│   ├── requirements.txt   # Backend dependencies
-│   ├── faces/             # Source images for enrollment
-│   └── venv/              # Python Virtual Environment
+│   ├── app.py                 # ONLY handles server init and routes
+│   ├── config.py              # Environment variables & DB URIs
+│   ├── engine.py              # The AI/OpenCV logic
+│   ├── database/              # --- NEW DB MODULE ---
+│   │   ├── __init__.py
+│   │   ├── connection.py      # MongoDB client singleton
+│   │   └── models.py          # Data schemas (Pentagon schema) & DB operations
+│   └── static/uploads/        # Permanent photo storage
 └── frontend/
-    ├── templates/         # HTML Files (index.html, etc.)
-    └── static/            # Assets (CSS, JS, registered images)
+    ├── src/
+    │   ├── App.jsx            # ONLY handles React Router (Navigation)
+    │   ├── main.jsx
+    │   ├── components/        # Reusable UI parts
+    │   │   ├── cyber/         # Neon/HUD components for Public View
+    │   │   └── admin/         # Clean/Corporate components for Admin View
+    │   ├── pages/             # Route specific screens
+    │   │   ├── PublicView.jsx # The Cyber-Scanner Interface
+    │   │   └── admin/
+    │   │       ├── AdminLayout.jsx
+    │   │       ├── Enrollment.jsx
+    │   │       ├── MemberList.jsx
+    │   │       └── HistoryLogs.jsx
+    │   └── utils/             # API caller functions
