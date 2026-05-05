@@ -25,16 +25,24 @@ print("[SYSTEM] Initializing Hardware and AI Models...")
 engine = FaceRecognitionEngine()
 camera = cv2.VideoCapture(0)
 
+# --- NEW: Global variable to store the latest frame ---
+latest_live_frame = None
+
 # =========================================================================
 # VIDEO STREAMING (Public Interface)
 # =========================================================================
 def gen_frames():
     """Generates the live video feed and pushes attendance events to React."""
+    global latest_live_frame # Declare global usage
     print("[SYSTEM] Video stream active.")
+    
     while True:
         success, frame = camera.read()
         if not success:
             continue
+            
+        # --- NEW: Save a copy of the frame for the API ---
+        latest_live_frame = frame.copy()
         
         try:
             # Process frame using the enterprise engine
@@ -68,7 +76,7 @@ def video_feed():
 def verify_and_enroll():
     """
     1. Receives an ID photo and personnel data from React Admin.
-    2. Takes a LIVE photo from the webcam.
+    2. Takes a LIVE photo from memory (not the camera directly).
     3. Compares the two.
     4. If they match, registers the user in MongoDB.
     """
@@ -100,11 +108,13 @@ def verify_and_enroll():
             
         uploaded_encoding = face_recognition.face_encodings(uploaded_image, uploaded_face_locations)[0]
 
-        # 4. Capture a LIVE frame from the camera
-        success, live_frame = camera.read()
-        if not success:
+        # 4. Grab the LIVE frame from the video stream's memory (Fix for the deadlock)
+        global latest_live_frame
+        if latest_live_frame is None:
             os.remove(temp_path)
-            return jsonify({"success": False, "message": "Camera hardware failure during live capture."}), 500
+            return jsonify({"success": False, "message": "Live feed not initialized. Please ensure the camera is active."}), 500
+            
+        live_frame = latest_live_frame.copy()
 
         # 5. THE PENTAGON PROTOCOL: Verify Live Frame vs Uploaded ID
         is_match, result_or_error = engine.verify_live_match(uploaded_encoding, live_frame)
