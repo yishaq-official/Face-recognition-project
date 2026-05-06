@@ -1,4 +1,4 @@
-
+// /frontend/src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import Pages (We will build these next)

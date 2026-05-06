@@ -1,3 +1,4 @@
+// /frontend/src/pages/PublicView.jsx
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Shield, Fingerprint, Activity, ScanFace, Lock, Unlock, User, Clock, ChevronRight } from 'lucide-react';

@@ -1,3 +1,4 @@
+// /frontend/src/pages/admin/Enrollment.jsx
 import { useState, useEffect } from 'react';
 import { Upload, Camera, AlertTriangle, CheckCircle, Fingerprint, ShieldCheck, XOctagon } from 'lucide-react';
 

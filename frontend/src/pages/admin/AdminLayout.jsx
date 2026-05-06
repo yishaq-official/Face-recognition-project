@@ -1,4 +1,4 @@
-
+// /frontend/src/pages/admin/AdminLayout.jsx
 import { Outlet, NavLink } from 'react-router-dom';
 import { Shield, Users, Activity, Database } from 'lucide-react';
 

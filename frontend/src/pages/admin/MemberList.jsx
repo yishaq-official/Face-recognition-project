@@ -1,3 +1,4 @@
+// /frontend/src/pages/admin/MemberList.jsx
 import { useState, useEffect } from 'react';
 import { Users, ShieldAlert, Trash2, Search, FileText, CheckCircle, Fingerprint, Activity, X, Shield, Cpu } from 'lucide-react';
 

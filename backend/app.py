@@ -1,4 +1,5 @@
-# --- CRITICAL CONCURRENCY FIX: MUST BE AT THE VERY TOP ---
+#app.py
+
 import eventlet
 eventlet.monkey_patch()
 
@@ -41,6 +42,12 @@ def gen_frames():
     print("[SYSTEM] Video stream active.")
     
     while True:
+        # -------------------------------------------------------------
+        # THE CRITICAL FIX: Yield control so the server can breathe!
+        # This allows WebSockets and Enrollment HTTP requests to process.
+        # -------------------------------------------------------------
+        socketio.sleep(0.01) 
+        
         success, frame = camera.read()
         if not success:
             continue
@@ -68,7 +75,6 @@ def gen_frames():
         except Exception as e:
             print(f"[STREAM ERROR]: {e}")
             break
-
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
