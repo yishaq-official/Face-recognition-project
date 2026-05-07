@@ -1,46 +1,116 @@
 // /frontend/src/pages/admin/Enrollment.jsx
 import { useState, useEffect } from 'react';
-import { Upload, Camera, AlertTriangle, CheckCircle, Fingerprint, ShieldCheck, XOctagon } from 'lucide-react';
+import {
+  Upload, Camera, CheckCircle, Fingerprint, ShieldCheck, XOctagon,
+  User, Dna, Briefcase, MapPin, Shield, ChevronRight, ChevronLeft, Lock
+} from 'lucide-react';
+
+// ─── Static option lists ────────────────────────────────────────────────────
+const BLOOD_TYPES    = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+const EYE_COLORS     = ['Brown','Black','Hazel','Green','Blue','Gray','Amber'];
+const CLEARANCE_OPTS = ['UNCLASSIFIED','SECRET','TOP SECRET','TOP SECRET // SCI'];
+const DEPARTMENTS    = [
+  'Cyber Operations','Signals Intelligence','Counter-Intelligence',
+  'Human Intelligence','Technical Surveillance','Cryptanalysis',
+  'Critical Infrastructure Protection','Internal Security','Executive Protection',
+];
+const RANKS = [
+  'Analyst I','Analyst II','Senior Analyst',
+  'Officer','Senior Officer','Chief Officer',
+  'Director','Deputy Director','Director General',
+];
+const ACCESS_ZONE_OPTS = ['ZONE-A','ZONE-B','ZONE-C','ZONE-D','ZONE-CYBER','ZONE-SIGINT','ZONE-EXEC'];
+
+// ─── Step definitions ───────────────────────────────────────────────────────
+const STEPS = [
+  { id: 'identity',  label: 'Identity',     icon: User      },
+  { id: 'physical',  label: 'Physical',     icon: Dna       },
+  { id: 'service',   label: 'Service',      icon: Briefcase },
+  { id: 'clearance', label: 'Clearance',    icon: Shield    },
+  { id: 'biometric', label: 'Biometric',    icon: Fingerprint },
+];
+
+const initialForm = () => ({
+  // identity
+  firstName:     '',
+  lastName:      '',
+  employeeId:    `INSA-${Math.floor(Math.random() * 90000) + 10000}`,
+  sex:           'Male',
+  dateOfBirth:   '',
+
+  // physical
+  bloodType:     'O+',
+  heightCm:      '',
+  weightKg:      '',
+  eyeColor:      'Brown',
+  distinguishingMarks: '',
+
+  // service
+  rank:             '',
+  jobTitle:         '',
+  department:       DEPARTMENTS[0],
+  unit:             '',
+  postingLocation:  'Addis Ababa HQ',
+  dateJoinedService:'',
+  accessZones:      [],
+
+  // clearance
+  clearance: 'UNCLASSIFIED',
+});
 
 export default function Enrollment() {
-  const [formData, setFormData] = useState(() => ({
-    firstName: '',
-    lastName: '',
-    employeeId: `AGS-${Math.floor(Math.random() * 9000) + 1000}`,
-    clearance: 'UNCLASSIFIED'
-  }));
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null); // NEW: State to hold the image preview
-  const [status, setStatus] = useState('idle'); // idle, enrolling, success, error
-  const [message, setMessage] = useState('');
+  const [step,       setStep]       = useState(0);
+  const [form,       setForm]       = useState(initialForm);
+  const [file,       setFile]       = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [status,     setStatus]     = useState('idle');   // idle | enrolling | success | error
+  const [message,    setMessage]    = useState('');
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const toggleZone = (zone) => {
+    setForm(f => ({
+      ...f,
+      accessZones: f.accessZones.includes(zone)
+        ? f.accessZones.filter(z => z !== zone)
+        : [...f.accessZones, zone],
+    }));
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      // NEW: Generate a local URL to preview the image
-      setPreviewUrl(URL.createObjectURL(selectedFile)); 
+    if (e.target.files?.[0]) {
+      setFile(e.target.files[0]);
+      setPreviewUrl(URL.createObjectURL(e.target.files[0]));
     }
   };
 
-  const handleEnrollment = async (e) => {
-    e.preventDefault();
-    if (!file) {
-      setStatus('error');
-      setMessage('A verified ID photo must be uploaded.');
-      return;
-    }
+  const handleEnrollment = async () => {
+    if (!file) { setStatus('error'); setMessage('An official ID photo must be uploaded.'); return; }
     setStatus('enrolling');
-    setMessage('Initiating Live Verification Protocol...');
+    setMessage('Initiating biometric verification protocol...');
 
     const personnelData = {
-      name: { first: formData.firstName, last: formData.lastName },
-      employee_id: formData.employeeId,
-      position: { clearance_level: formData.clearance }
+      employee_id: form.employeeId,
+      name: { first: form.firstName, last: form.lastName },
+      personal: {
+        sex:                  form.sex,
+        date_of_birth:        form.dateOfBirth,
+        blood_type:           form.bloodType,
+        height_cm:            parseInt(form.heightCm) || 0,
+        weight_kg:            parseInt(form.weightKg) || 0,
+        eye_color:            form.eyeColor,
+        distinguishing_marks: form.distinguishingMarks,
+      },
+      service: {
+        rank:              form.rank,
+        job_title:         form.jobTitle,
+        department:        form.department,
+        unit:              form.unit,
+        posting_location:  form.postingLocation,
+        date_joined_service: form.dateJoinedService,
+        access_zones:      form.accessZones,
+      },
+      position: { clearance_level: form.clearance },
     };
 
     const payload = new FormData();
@@ -48,341 +118,418 @@ export default function Enrollment() {
     payload.append('personnel_data', JSON.stringify(personnelData));
 
     try {
-      console.log("[SYSTEM] Payload sent to Security Server...");
-      const response = await fetch('http://localhost:5000/api/verify_and_enroll', {
-        method: 'POST',
-        body: payload,
-      });
-      
-      console.log(`[SYSTEM] Raw response received: ${response.status}`);
-      const data = await response.json();
-      
-      if (response.ok) {
+      const res  = await fetch('http://localhost:5000/api/verify_and_enroll', { method: 'POST', body: payload });
+      const data = await res.json();
+
+      if (res.ok) {
         setStatus('success');
         setMessage(data.message);
-        // Reset the form in the background
-        setFormData({ ...formData, firstName: '', lastName: '', employeeId: `AGS-${Math.floor(Math.random() * 9000) + 1000}` });
+        setForm(initialForm());
         setFile(null);
-        setPreviewUrl(null); // Clear preview
+        setPreviewUrl(null);
+        setStep(0);
       } else {
         setStatus('error');
         setMessage(data.message || 'Verification failed.');
       }
     } catch (err) {
-      console.error("[CRITICAL FETCH ERROR]:", err);
       setStatus('error');
       setMessage(`Connection Error: ${err.message}`);
     }
   };
 
-  const dismissModal = () => {
-    setStatus('idle');
-    setMessage('');
+  const dismiss = () => { setStatus('idle'); setMessage(''); };
+
+  const canAdvance = () => {
+    if (step === 0) return form.firstName && form.lastName && form.dateOfBirth;
+    if (step === 2) return form.rank && form.jobTitle && form.unit;
+    if (step === 4) return !!file;
+    return true;
   };
 
   return (
-    <div style={{ fontFamily: 'monospace', width: '100%', boxSizing: 'border-box', color: '#a0ffb0', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+    <div style={{ fontFamily: "'Courier New', monospace", color: '#a0ffb0', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', width: '100%', boxSizing: 'border-box' }}>
 
-      {/* =========================================
-          THE FULL-SCREEN ALERT MODAL
-      ========================================= */}
+      {/* ── Result modal ─────────────────────────────────────────────────── */}
       {(status === 'success' || status === 'error') && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(1, 5, 2, 0.85)',
-          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          animation: 'fadeIn 0.3s ease-out'
-        }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(1,5,2,0.9)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{
-            background: '#020a04',
-            border: `2px solid ${status === 'success' ? '#1aff5a' : '#ff3a3a'}`,
-            boxShadow: `0 0 40px ${status === 'success' ? 'rgba(26,255,90,0.2)' : 'rgba(255,58,58,0.2)'}`,
-            padding: '40px', borderRadius: '8px', maxWidth: '500px', width: '90%', textAlign: 'center',
-            position: 'relative', overflow: 'hidden'
+            background: '#020a04', border: `2px solid ${status === 'success' ? '#1aff5a' : '#ff3a3a'}`,
+            boxShadow: `0 0 40px ${status === 'success' ? 'rgba(26,255,90,0.15)' : 'rgba(255,58,58,0.15)'}`,
+            padding: '40px', borderRadius: '8px', maxWidth: '480px', width: '90%', textAlign: 'center',
           }}>
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 4px)' }} />
-            
-            {status === 'success' ? (
-              <ShieldCheck size={64} style={{ color: '#1aff5a', margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px #1aff5a)' }} />
-            ) : (
-              <XOctagon size={64} style={{ color: '#ff3a3a', margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px #ff3a3a)' }} />
-            )}
-
-            <h2 style={{ 
-              fontSize: '24px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 16px',
-              color: status === 'success' ? '#a0ffb0' : '#ff9999',
-              textShadow: `0 0 10px ${status === 'success' ? 'rgba(160,255,176,0.5)' : 'rgba(255,153,153,0.5)'}`
-            }}>
+            {status === 'success'
+              ? <ShieldCheck size={60} style={{ color: '#1aff5a', margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px #1aff5a)' }} />
+              : <XOctagon   size={60} style={{ color: '#ff3a3a', margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px #ff3a3a)' }} />}
+            <h2 style={{ fontSize: '22px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 14px', color: status === 'success' ? '#a0ffb0' : '#ff9999' }}>
               {status === 'success' ? 'ENROLLMENT VERIFIED' : 'SECURITY ALERT'}
             </h2>
-            
-            <p style={{ fontSize: '14px', lineHeight: '1.6', color: status === 'success' ? '#3aff6a' : '#ff4a4a', letterSpacing: '0.1em', marginBottom: '30px', position: 'relative', zIndex: 10 }}>
-              {message}
-            </p>
-
-            <button onClick={dismissModal} style={{
-              background: status === 'success' ? 'rgba(26,255,90,0.1)' : 'rgba(255,58,58,0.1)',
-              border: `1px solid ${status === 'success' ? '#1aff5a' : '#ff3a3a'}`,
-              color: status === 'success' ? '#1aff5a' : '#ff3a3a',
-              padding: '12px 30px', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '0.2em',
-              textTransform: 'uppercase', cursor: 'pointer', borderRadius: '4px', position: 'relative', zIndex: 10,
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={e => {
-              e.target.style.background = status === 'success' ? '#1aff5a' : '#ff3a3a';
-              e.target.style.color = '#000';
-            }}
-            onMouseLeave={e => {
-              e.target.style.background = status === 'success' ? 'rgba(26,255,90,0.1)' : 'rgba(255,58,58,0.1)';
-              e.target.style.color = status === 'success' ? '#1aff5a' : '#ff3a3a';
-            }}>
-              ACKNOWLEDGE
-            </button>
+            <p style={{ fontSize: '13px', lineHeight: '1.7', color: status === 'success' ? '#3aff6a' : '#ff4a4a', letterSpacing: '0.08em', marginBottom: '28px' }}>{message}</p>
+            <button onClick={dismiss} style={modalBtnStyle(status === 'success')}>ACKNOWLEDGE</button>
           </div>
         </div>
       )}
 
-      {/* HEADER */}
-      <header style={{ borderBottom: '1px solid #1aff5a33', paddingBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <header style={{ borderBottom: '1px solid #1aff5a22', paddingBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <p style={{ fontSize: '10px', letterSpacing: '0.3em', color: '#3aff6a88', marginBottom: '6px', textTransform: 'uppercase' }}>ARGUS SECURITY SYSTEMS // NODE-7</p>
-          <h1 style={{ fontSize: '32px', fontWeight: 300, letterSpacing: '0.25em', color: '#a0ffb0', textTransform: 'uppercase', margin: 0, textShadow: '0 0 10px rgba(160, 255, 176, 0.2)' }}>Personnel Enrollment</h1>
-          <p style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#3aff6a66', marginTop: '6px', textTransform: 'uppercase' }}>Biometric Registration &amp; Live Verification Required</p>
+          <p style={subLabel}>INSA — INFORMATION NETWORK SECURITY AGENCY // NODE-7</p>
+          <h1 style={{ fontSize: '28px', fontWeight: 300, letterSpacing: '0.25em', color: '#a0ffb0', textTransform: 'uppercase', margin: '4px 0' }}>
+            Personnel Enrollment
+          </h1>
+          <p style={{ ...subLabel, marginTop: 0 }}>Biometric Registration &amp; Live Verification Required</p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '10px', letterSpacing: '0.2em', color: '#1aff5a', padding: '4px 12px', borderRadius: '4px', background: 'rgba(26, 255, 90, 0.05)', border: '1px solid rgba(26, 255, 90, 0.4)', textTransform: 'uppercase', boxShadow: '0 0 10px rgba(26, 255, 90, 0.1) inset' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff3a3a', display: 'inline-block', animation: 'blink 1.2s infinite', boxShadow: '0 0 8px #ff3a3a' }} />
-            LIVE
-          </div>
-          <ClockDisplay />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', letterSpacing: '0.2em', color: '#1aff5a', padding: '5px 12px', border: '1px solid rgba(26,255,90,0.35)', borderRadius: '4px', background: 'rgba(26,255,90,0.04)' }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ff3a3a', display: 'inline-block', boxShadow: '0 0 6px #ff3a3a', animation: 'blink 1.2s infinite' }} />
+          LIVE
         </div>
       </header>
 
-      {/* MAIN GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
-
-        {/* LEFT: FORM */}
-        <form onSubmit={handleEnrollment} style={{ background: '#030805', border: '1px solid #1aff5a33', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 0 20px rgba(26, 255, 90, 0.03)' }}>
-          <div style={{ background: 'rgba(2, 10, 4, 0.8)', borderBottom: '1px solid #1aff5a22', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#3aff6a99', textTransform: 'uppercase' }}>Subject Data Entry</span>
-            <span style={{ fontSize: '10px', color: '#3aff6a44', letterSpacing: '0.2em' }}>FORM-7A</span>
-          </div>
-
-          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>First Name</label>
-                <input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange}
-                  style={inputStyle} onFocus={e => {e.target.style.borderColor = '#1aff5a'; e.target.style.boxShadow = '0 0 8px rgba(26,255,90,0.2)';}} onBlur={e => {e.target.style.borderColor = '#1aff5a44'; e.target.style.boxShadow = 'none';}} />
-              </div>
-              <div>
-                <label style={labelStyle}>Last Name</label>
-                <input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange}
-                  style={inputStyle} onFocus={e => {e.target.style.borderColor = '#1aff5a'; e.target.style.boxShadow = '0 0 8px rgba(26,255,90,0.2)';}} onBlur={e => {e.target.style.borderColor = '#1aff5a44'; e.target.style.boxShadow = 'none';}} />
-              </div>
+      {/* ── Step indicator ────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: '0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #1aff5a22' }}>
+        {STEPS.map((s, i) => {
+          const Icon = s.icon;
+          const active   = i === step;
+          const complete = i < step;
+          return (
+            <div key={s.id} style={{
+              flex: 1, padding: '10px 8px', textAlign: 'center',
+              background: active ? 'rgba(26,255,90,0.1)' : complete ? 'rgba(26,255,90,0.04)' : 'transparent',
+              borderRight: i < STEPS.length - 1 ? '1px solid #1aff5a22' : 'none',
+              cursor: complete ? 'pointer' : 'default',
+              transition: 'background 0.2s',
+            }} onClick={() => complete && setStep(i)}>
+              <Icon size={16} style={{ margin: '0 auto 4px', color: active ? '#1aff5a' : complete ? '#3aff6a88' : '#3aff6a33', display: 'block' }} />
+              <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: active ? '#1aff5a' : complete ? '#3aff6a66' : '#3aff6a33', textTransform: 'uppercase' }}>{s.label}</div>
+              {complete && <div style={{ width: '16px', height: '1px', background: '#1aff5a44', margin: '4px auto 0' }} />}
             </div>
+          );
+        })}
+      </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Agent ID (Auto-Gen)</label>
-                <input type="text" name="employeeId" readOnly value={formData.employeeId}
-                  style={{ ...inputStyle, color: '#3aff6a55', cursor: 'not-allowed', borderColor: '#1aff5a22', background: 'rgba(1, 10, 3, 0.5)' }} />
-              </div>
-              <div>
-                <label style={labelStyle}>Clearance Level</label>
-                <select name="clearance" value={formData.clearance} onChange={handleInputChange} style={inputStyle}>
-                  <option value="UNCLASSIFIED">UNCLASSIFIED</option>
-                  <option value="SECRET">SECRET</option>
-                  <option value="TOP SECRET">TOP SECRET</option>
-                  <option value="TOP SECRET // SCI">TOP SECRET // SCI</option>
+      {/* ── Main grid: form + live feed ───────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px' }}>
+
+        {/* LEFT — form panel */}
+        <div style={panel}>
+          <PanelHeader left={`Step ${step + 1} of ${STEPS.length} — ${STEPS[step].label}`} right={`FORM-INSA-${step + 1}A`} />
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+            {/* ── STEP 0: Identity ── */}
+            {step === 0 && <>
+              <Row>
+                <Field label="First Name">
+                  <input style={inp} value={form.firstName} onChange={e => set('firstName', e.target.value)} required />
+                </Field>
+                <Field label="Last Name">
+                  <input style={inp} value={form.lastName} onChange={e => set('lastName', e.target.value)} required />
+                </Field>
+              </Row>
+              <Row>
+                <Field label="Agent ID (Auto)">
+                  <input style={{ ...inp, color: '#3aff6a44', cursor: 'not-allowed' }} value={form.employeeId} readOnly />
+                </Field>
+                <Field label="Sex">
+                  <select style={inp} value={form.sex} onChange={e => set('sex', e.target.value)}>
+                    {['Male','Female','Other'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              </Row>
+              <Field label="Date of Birth">
+                <input style={inp} type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)} required />
+              </Field>
+            </>}
+
+            {/* ── STEP 1: Physical Description ── */}
+            {step === 1 && <>
+              <Row>
+                <Field label="Blood Type">
+                  <select style={inp} value={form.bloodType} onChange={e => set('bloodType', e.target.value)}>
+                    {BLOOD_TYPES.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+                <Field label="Eye Color">
+                  <select style={inp} value={form.eyeColor} onChange={e => set('eyeColor', e.target.value)}>
+                    {EYE_COLORS.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              </Row>
+              <Row>
+                <Field label="Height (cm)">
+                  <input style={inp} type="number" min="100" max="250" value={form.heightCm} onChange={e => set('heightCm', e.target.value)} placeholder="e.g. 175" />
+                </Field>
+                <Field label="Weight (kg)">
+                  <input style={inp} type="number" min="30" max="200" value={form.weightKg} onChange={e => set('weightKg', e.target.value)} placeholder="e.g. 72" />
+                </Field>
+              </Row>
+              <Field label="Distinguishing Marks / Notes">
+                <textarea style={{ ...inp, height: '80px', resize: 'vertical' }} value={form.distinguishingMarks} onChange={e => set('distinguishingMarks', e.target.value)} placeholder="Scars, tattoos, birthmarks — or 'None'" />
+              </Field>
+            </>}
+
+            {/* ── STEP 2: Service & Assignment ── */}
+            {step === 2 && <>
+              <Row>
+                <Field label="Rank">
+                  <select style={inp} value={form.rank} onChange={e => set('rank', e.target.value)}>
+                    <option value="">— Select —</option>
+                    {RANKS.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+                <Field label="Job Title">
+                  <input style={inp} value={form.jobTitle} onChange={e => set('jobTitle', e.target.value)} placeholder="e.g. Cyber Intelligence Analyst" />
+                </Field>
+              </Row>
+              <Row>
+                <Field label="Department">
+                  <select style={inp} value={form.department} onChange={e => set('department', e.target.value)}>
+                    {DEPARTMENTS.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+                <Field label="Unit Designation">
+                  <input style={inp} value={form.unit} onChange={e => set('unit', e.target.value)} placeholder="e.g. SIGINT-ET-04" />
+                </Field>
+              </Row>
+              <Row>
+                <Field label="Posting Location">
+                  <input style={inp} value={form.postingLocation} onChange={e => set('postingLocation', e.target.value)} placeholder="e.g. Addis Ababa HQ" />
+                </Field>
+                <Field label="Date Joined Service">
+                  <input style={inp} type="date" value={form.dateJoinedService} onChange={e => set('dateJoinedService', e.target.value)} />
+                </Field>
+              </Row>
+            </>}
+
+            {/* ── STEP 3: Clearance & Access Zones ── */}
+            {step === 3 && <>
+              <Field label="Clearance Level">
+                <select style={inp} value={form.clearance} onChange={e => set('clearance', e.target.value)}>
+                  {CLEARANCE_OPTS.map(o => <option key={o}>{o}</option>)}
                 </select>
-              </div>
-            </div>
+              </Field>
+              <Field label="Access Zones — select all that apply">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                  {ACCESS_ZONE_OPTS.map(zone => {
+                    const on = form.accessZones.includes(zone);
+                    return (
+                      <button key={zone} type="button" onClick={() => toggleZone(zone)} style={{
+                        padding: '6px 12px', fontSize: '10px', letterSpacing: '0.15em',
+                        fontFamily: "'Courier New', monospace", cursor: 'pointer', borderRadius: '3px',
+                        border: `1px solid ${on ? '#1aff5a' : '#1aff5a33'}`,
+                        background: on ? 'rgba(26,255,90,0.12)' : 'transparent',
+                        color: on ? '#1aff5a' : '#3aff6a55',
+                        transition: 'all 0.15s',
+                      }}>
+                        {on && <CheckCircle size={10} style={{ verticalAlign: 'middle', marginRight: 4 }} />}
+                        {zone}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
 
-            {/* UPGRADED UPLOAD ZONE WITH IMAGE PREVIEW & SCANNER */}
-            <div>
-              <label style={labelStyle}>Official ID Photo Reference</label>
-              <div style={{ border: '1px dashed #1aff5a55', borderRadius: '6px', padding: file ? '16px' : '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 10, 4, 0.6)', position: 'relative', cursor: 'pointer', minHeight: '110px', transition: 'all 0.3s' }}
-                onMouseEnter={e => {e.currentTarget.style.borderColor = '#1aff5a'; e.currentTarget.style.background = 'rgba(2, 10, 4, 0.9)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(26,255,90,0.05) inset';}} onMouseLeave={e => {e.currentTarget.style.borderColor = '#1aff5a55'; e.currentTarget.style.background = 'rgba(2, 10, 4, 0.6)'; e.currentTarget.style.boxShadow = 'none';}}>
-                <input type="file" accept="image/jpeg, image/png" onChange={handleFileChange}
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 5 }} />
-                
-                {previewUrl ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', width: '100%' }}>
-                    {/* The Image Preview with Scanner Box */}
-                    <div style={{ position: 'relative', width: '70px', height: '90px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #1aff5a88', boxShadow: '0 0 10px rgba(26,255,90,0.2)' }}>
-                      <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.5) contrast(1.2)' }} />
-                      {/* The Magic Scanner Line */}
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#1aff5a', boxShadow: '0 0 8px #1aff5a', animation: 'scan 2s infinite linear' }} />
-                    </div>
-                    {/* Details to the right */}
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#a0ffb0', fontWeight: 'bold', fontSize: '13px', letterSpacing: '0.1em', marginBottom: '4px' }}>{file.name}</p>
-                      <p style={{ fontSize: '10px', color: '#1aff5a', display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.15em' }}>
-                        <CheckCircle size={12} /> HASH VERIFIED
-                      </p>
-                      <p style={{ fontSize: '9px', color: '#3aff6a55', marginTop: '6px' }}>CLICK TO REPLACE</p>
-                    </div>
+              {/* Live clearance badge preview */}
+              {form.clearance && (
+                <div style={{ marginTop: '4px', padding: '14px', background: 'rgba(0,0,0,0.3)', border: '1px dashed #1aff5a22', borderRadius: '4px' }}>
+                  <p style={subLabel}>Preview</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Lock size={14} color={clearanceColor(form.clearance)} />
+                    <span style={{
+                      fontSize: '11px', letterSpacing: '0.12em', fontWeight: 'bold',
+                      color: clearanceColor(form.clearance),
+                      padding: '4px 10px', border: `1px solid ${clearanceColor(form.clearance)}66`,
+                      background: `${clearanceColor(form.clearance)}11`, borderRadius: '3px',
+                    }}>{form.clearance}</span>
                   </div>
-                ) : (
-                  <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
-                    <Upload style={{ margin: '0 auto 12px', color: '#3aff6a66', display: 'block' }} size={32} />
-                    <p style={{ color: '#3aff6a88', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Click or drag ID photo here</p>
-                    <p style={{ fontSize: '10px', color: '#3aff6a44', marginTop: '6px', letterSpacing: '0.15em' }}>JPEG / PNG ACCEPTED</p>
+                </div>
+              )}
+            </>}
+
+            {/* ── STEP 4: Biometric Upload + Submit ── */}
+            {step === 4 && <>
+              <Field label="Official ID Photo Reference">
+                <div style={{
+                  border: '1px dashed #1aff5a44', borderRadius: '6px', padding: file ? '14px' : '28px 14px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(2,10,4,0.5)', position: 'relative', cursor: 'pointer', minHeight: '100px',
+                }}>
+                  <input type="file" accept="image/jpeg,image/png" onChange={handleFileChange}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 5 }} />
+                  {previewUrl ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
+                      <div style={{ width: '64px', height: '80px', border: '1px solid #1aff5a66', borderRadius: '3px', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                        <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.4) contrast(1.2)' }} />
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#1aff5a', animation: 'scan 2s infinite linear' }} />
+                      </div>
+                      <div>
+                        <p style={{ color: '#a0ffb0', fontSize: '12px', marginBottom: '4px' }}>{file.name}</p>
+                        <p style={{ fontSize: '10px', color: '#1aff5a', display: 'flex', alignItems: 'center', gap: '5px', letterSpacing: '0.12em' }}>
+                          <CheckCircle size={11} /> HASH VERIFIED
+                        </p>
+                        <p style={{ fontSize: '9px', color: '#3aff6a44', marginTop: '5px' }}>CLICK TO REPLACE</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
+                      <Upload size={28} style={{ margin: '0 auto 10px', color: '#3aff6a44', display: 'block' }} />
+                      <p style={{ color: '#3aff6a66', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Click or drag ID photo here</p>
+                      <p style={{ fontSize: '9px', color: '#3aff6a33', marginTop: '4px' }}>JPEG / PNG ACCEPTED</p>
+                    </div>
+                  )}
+                </div>
+              </Field>
+
+              {/* Summary card */}
+              <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid #1aff5a22', borderRadius: '4px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <p style={subLabel}>Enrollment Summary</p>
+                {[
+                  ['Agent',      `${form.firstName} ${form.lastName}`],
+                  ['ID',         form.employeeId],
+                  ['Rank',       form.rank || '—'],
+                  ['Department', form.department],
+                  ['Clearance',  form.clearance],
+                  ['Zones',      form.accessZones.join(', ') || '—'],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', borderBottom: '1px solid #1aff5a11', paddingBottom: '4px' }}>
+                    <span style={{ color: '#3aff6a55', letterSpacing: '0.1em' }}>{k}</span>
+                    <span style={{ color: '#a0ffb0' }}>{v}</span>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
 
-            <button type="submit" disabled={status === 'enrolling'} style={{
-              width: '100%', background: '#1aff5a', color: '#010502', border: 'none', borderRadius: '4px',
-              padding: '16px', fontFamily: 'monospace', fontSize: '13px', letterSpacing: '0.25em',
-              textTransform: 'uppercase', fontWeight: 'bold', cursor: status === 'enrolling' ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-              opacity: status === 'enrolling' ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 0 15px rgba(26, 255, 90, 0.2)'
-            }}
-              onMouseEnter={e => { if (status !== 'enrolling') { e.target.style.background = '#60ffaa'; e.target.style.boxShadow = '0 0 25px rgba(26, 255, 90, 0.4)'; } }}
-              onMouseLeave={e => { e.target.style.background = '#1aff5a'; e.target.style.boxShadow = '0 0 15px rgba(26, 255, 90, 0.2)'; }}>
-              {status === 'enrolling'
-                ? <><Fingerprint size={18} style={{ animation: 'pulse 1s infinite' }} /> Verifying Live Subject...</>
-                : 'Initiate Verification & Enroll'}
-            </button>
-          </div>
-        </form>
+              <button onClick={handleEnrollment} disabled={status === 'enrolling' || !file} style={{
+                width: '100%', background: '#1aff5a', color: '#010502', border: 'none', borderRadius: '4px',
+                padding: '14px', fontFamily: "'Courier New', monospace", fontSize: '12px',
+                letterSpacing: '0.25em', textTransform: 'uppercase', fontWeight: 'bold',
+                cursor: (status === 'enrolling' || !file) ? 'not-allowed' : 'pointer',
+                opacity: (status === 'enrolling' || !file) ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              }}>
+                {status === 'enrolling'
+                  ? <><Fingerprint size={16} style={{ animation: 'pulse 1s infinite' }} /> Verifying Live Subject...</>
+                  : 'Initiate Verification & Enroll'}
+              </button>
+            </>}
 
-        {/* RIGHT: LIVE FEED */}
-        <div style={{ background: '#030805', border: '1px solid #1aff5a33', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 0 20px rgba(26, 255, 90, 0.03)' }}>
-          <div style={{ background: 'rgba(2, 10, 4, 0.8)', borderBottom: '1px solid #1aff5a22', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#3aff6a99', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Camera size={14} color="#3aff6a99" /> Live Verification Feed
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <FrameCounter />
-              <span style={{ position: 'relative', display: 'inline-flex', width: '8px', height: '8px' }}>
-                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#ff3a3a', opacity: 0.75, animation: 'ping 1.2s cubic-bezier(0,0,0.2,1) infinite' }} />
-                <span style={{ position: 'relative', borderRadius: '50%', width: '8px', height: '8px', background: '#ff3a3a' }} />
-              </span>
+            {/* ── Navigation buttons ── */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+              <button onClick={() => setStep(s => s - 1)} disabled={step === 0} style={navBtn(false, step === 0)}>
+                <ChevronLeft size={14} /> BACK
+              </button>
+              {step < STEPS.length - 1 && (
+                <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()} style={navBtn(true, !canAdvance())}>
+                  NEXT <ChevronRight size={14} />
+                </button>
+              )}
             </div>
           </div>
+        </div>
 
-          <div style={{ flex: 1, background: '#010502', position: 'relative', minHeight: '320px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* RIGHT — live feed */}
+        <div style={{ ...panel, display: 'flex', flexDirection: 'column' }}>
+          <PanelHeader left={<><Camera size={13} style={{ verticalAlign: 'middle', marginRight: 6 }} />Live Verification Feed</>} right={<FrameCounter />} />
+          <div style={{ flex: 1, background: '#010502', position: 'relative', minHeight: '280px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src="http://localhost:5000/video_feed" alt="Live Scanner"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, filter: 'grayscale(1) contrast(1.2)' }} />
-            
-            {/* NEW: Secondary Warning Scanner during Enrollment! */}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55, filter: 'grayscale(1) contrast(1.2)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(26,255,90,0.04) 4px)', pointerEvents: 'none' }} />
             {status === 'enrolling' && (
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: '#ffe066', boxShadow: '0 0 20px #ffe066', animation: 'scanFast 1.5s infinite linear', zIndex: 10 }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#ffe066', boxShadow: '0 0 16px #ffe066', animation: 'scanFast 1.5s infinite linear', zIndex: 10 }} />
             )}
-
-            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.05 }}>
-              <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1aff5a" strokeWidth="1" /></pattern></defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(26,255,90,0.05) 4px)' }} />
-            
+            {/* Corner brackets */}
+            <div style={{ position: 'absolute', top: 10, left: 10, width: '20px', height: '20px', borderTop: '2px solid #1aff5a', borderLeft: '2px solid #1aff5a' }} />
+            <div style={{ position: 'absolute', top: 10, right: 10, width: '20px', height: '20px', borderTop: '2px solid #1aff5a', borderRight: '2px solid #1aff5a' }} />
+            <div style={{ position: 'absolute', bottom: 10, left: 10, width: '20px', height: '20px', borderBottom: '2px solid #1aff5a', borderLeft: '2px solid #1aff5a' }} />
+            <div style={{ position: 'absolute', bottom: 10, right: 10, width: '20px', height: '20px', borderBottom: '2px solid #1aff5a', borderRight: '2px solid #1aff5a' }} />
             {/* Reticle */}
-            <div style={{ position: 'relative', width: '130px', height: '130px', transition: 'all 0.3s', filter: status === 'enrolling' ? 'drop-shadow(0 0 10px #ffe066)' : 'none' }}>
-              {[['0,0','top:0,left:0','borderTopWidth:2px,borderLeftWidth:2px'],
-                ['0,0','top:0,right:0','borderTopWidth:2px,borderRightWidth:2px'],
-                ['0,0','bottom:0,left:0','borderBottomWidth:2px,borderLeftWidth:2px'],
-                ['0,0','bottom:0,right:0','borderBottomWidth:2px,borderRightWidth:2px']].map((_, i) => {
-                  const pos = [{ top: 0, left: 0 }, { top: 0, right: 0 }, { bottom: 0, left: 0 }, { bottom: 0, right: 0 }][i];
-                  const borders = [{ borderTop: '2px solid rgba(26,255,90,0.8)', borderLeft: '2px solid rgba(26,255,90,0.8)' }, { borderTop: '2px solid rgba(26,255,90,0.8)', borderRight: '2px solid rgba(26,255,90,0.8)' }, { borderBottom: '2px solid rgba(26,255,90,0.8)', borderLeft: '2px solid rgba(26,255,90,0.8)' }, { borderBottom: '2px solid rgba(26,255,90,0.8)', borderRight: '2px solid rgba(26,255,90,0.8)' }][i];
-                  return <div key={i} style={{ position: 'absolute', width: '25px', height: '25px', filter: 'drop-shadow(0 0 3px #1aff5a)', ...pos, ...borders }} />;
-                })}
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" style={{ animation: status === 'enrolling' ? 'spin 2s linear infinite' : 'none' }}>
-                  <circle cx="25" cy="25" r="22" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.6)'} strokeWidth="1" strokeDasharray="4 6" />
-                  <circle cx="25" cy="25" r="2.5" fill={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} />
-                  <line x1="25" y1="10" x2="25" y2="18" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
-                  <line x1="25" y1="32" x2="25" y2="40" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
-                  <line x1="10" y1="25" x2="18" y2="25" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
-                  <line x1="32" y1="25" x2="40" y2="25" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} strokeWidth="1" />
-                </svg>
-              </div>
-              <div style={{ position: 'absolute', bottom: '-24px', left: 0, right: 0, textAlign: 'center', fontSize: '9px', letterSpacing: '0.25em', color: status === 'enrolling' ? '#ffe066' : '#3aff6a88' }}>
-                {status === 'enrolling' ? 'COMPARING VECTORS' : 'AWAITING SUBJECT'}
-              </div>
+            <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', animation: status === 'enrolling' ? 'spin 2s linear infinite' : 'none' }}>
+                <circle cx="30" cy="30" r="26" stroke={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.5)'} strokeWidth="1" strokeDasharray="4 6" />
+                <circle cx="30" cy="30" r="3" fill={status === 'enrolling' ? '#ffe066' : 'rgba(26,255,90,0.8)'} />
+              </svg>
             </div>
-            
-            <div style={{ position: 'absolute', top: '16px', left: '16px' }}>
-              <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#1aff5a88' }}>RES 1920x1080</div>
-              <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#1aff5a88', marginTop: '4px' }}>FPS 30.00</div>
-            </div>
-            <div style={{ position: 'absolute', top: '16px', right: '16px', textAlign: 'right' }}>
-              <HudClock />
-              <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#1aff5a88', marginTop: '4px' }}>CAM-01</div>
-            </div>
-            <div style={{ position: 'absolute', bottom: '16px', left: '16px', fontSize: '9px', letterSpacing: '0.15em', color: '#1aff5a66' }}>FACIAL RECOGNITION ACTIVE</div>
+            <div style={{ position: 'absolute', bottom: '14px', left: '14px', fontSize: '9px', letterSpacing: '0.15em', color: '#1aff5a55' }}>FACIAL RECOGNITION ACTIVE</div>
           </div>
 
-          <div style={{ padding: '16px 20px', background: 'rgba(2, 10, 4, 0.9)', borderTop: '1px solid #1aff5a22', minHeight: '120px', fontFamily: 'monospace', fontSize: '12px', lineHeight: 1.8 }}>
-            <p style={{ color: '#3aff6a55' }}>// SYSTEM READY</p>
-            <p style={{ color: '#3aff6a55' }}>// AWAITING SUBJECT POSITIONING...</p>
+          <div style={{ padding: '14px 18px', background: 'rgba(2,10,4,0.9)', borderTop: '1px solid #1aff5a1a', minHeight: '90px', fontSize: '11px', lineHeight: 2, color: '#3aff6a55' }}>
+            <div>// INSA BIOMETRIC NODE-7 — READY</div>
+            <div>// STEP: {STEPS[step].label.toUpperCase()}</div>
             {status === 'enrolling' && (
-              <p style={{ color: '#ffe066', animation: 'pulse 1s infinite' }}>
+              <div style={{ color: '#ffe066', animation: 'pulse 1s infinite' }}>
                 // Extracting features from ID photo...<br />
-                // Capturing live frame...<br />
                 // Comparing 128-point matrices...
-              </p>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* NEW: Added Keyframes for Scanners! */}
       <style>{`
-        @keyframes ping { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(2.2); opacity: 0; } }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
-        @keyframes scanFast { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        select option { background: #030805; color: #a0ffb0; }
+        @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0.2} }
+        @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes scan     { 0%{top:0} 50%{top:100%} 100%{top:0} }
+        @keyframes scanFast { 0%{top:0} 50%{top:100%} 100%{top:0} }
+        @keyframes spin     { 100%{transform:rotate(360deg)} }
+        select option { background:#030805; color:#a0ffb0; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6) sepia(1) saturate(3) hue-rotate(90deg); cursor:pointer; }
       `}</style>
     </div>
   );
 }
 
-const labelStyle = { display: 'block', fontSize: '10px', letterSpacing: '0.25em', color: '#3aff6a88', textTransform: 'uppercase', marginBottom: '8px' };
-const inputStyle = { width: '100%', background: 'rgba(2, 10, 4, 0.6)', border: '1px solid #1aff5a44', borderRadius: '4px', padding: '12px 14px', color: '#a0ffb0', fontFamily: 'monospace', fontSize: '14px', outline: 'none', transition: 'all 0.3s', boxSizing: 'border-box' };
+// ─── Shared style helpers ────────────────────────────────────────────────────
+const subLabel = { fontSize: '9px', letterSpacing: '0.3em', color: '#3aff6a55', textTransform: 'uppercase', marginBottom: '4px', marginTop: 0 };
+const panel    = { background: '#030805', border: '1px solid #1aff5a22', borderRadius: '8px', overflow: 'hidden' };
+const inp      = { width: '100%', background: 'rgba(2,10,4,0.6)', border: '1px solid #1aff5a33', borderRadius: '4px', padding: '10px 12px', color: '#a0ffb0', fontFamily: "'Courier New', monospace", fontSize: '13px', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' };
 
-function ClockDisplay() {
-  const [time, setTime] = useState('');
-  useEffect(() => {
-    const tick = () => {
-      const n = new Date();
-      const p = v => String(v).padStart(2, '0');
-      setTime(`${p(n.getUTCHours())}:${p(n.getUTCMinutes())}:${p(n.getUTCSeconds())} UTC`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <div style={{ fontSize: '10px', letterSpacing: '0.15em', color: '#3aff6a66' }}>{time}</div>;
+const clearanceColor = (lvl) => {
+  if (lvl?.includes('SCI')) return '#ff3a3a';
+  if (lvl?.includes('TOP')) return '#ffe066';
+  if (lvl === 'SECRET')     return '#60ffaa';
+  return '#3aff6a88';
+};
+
+const navBtn = (primary, disabled) => ({
+  padding: '8px 18px', fontFamily: "'Courier New', monospace", fontSize: '10px',
+  letterSpacing: '0.2em', textTransform: 'uppercase', cursor: disabled ? 'not-allowed' : 'pointer',
+  borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '6px',
+  opacity: disabled ? 0.3 : 1, transition: 'all 0.15s',
+  background: primary ? 'rgba(26,255,90,0.08)' : 'transparent',
+  border: `1px solid ${primary ? '#1aff5a44' : '#1aff5a22'}`,
+  color: primary ? '#1aff5a' : '#3aff6a66',
+});
+
+const modalBtnStyle = (success) => ({
+  background: success ? 'rgba(26,255,90,0.1)' : 'rgba(255,58,58,0.1)',
+  border: `1px solid ${success ? '#1aff5a' : '#ff3a3a'}`,
+  color: success ? '#1aff5a' : '#ff3a3a',
+  padding: '10px 28px', fontFamily: "'Courier New', monospace", fontSize: '12px',
+  letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: '4px',
+});
+
+function PanelHeader({ left, right }) {
+  return (
+    <div style={{ background: 'rgba(2,10,4,0.8)', borderBottom: '1px solid #1aff5a1a', padding: '10px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#3aff6a77', textTransform: 'uppercase' }}>{left}</span>
+      <span style={{ fontSize: '9px', color: '#3aff6a33', letterSpacing: '0.2em' }}>{right}</span>
+    </div>
+  );
 }
 
-function HudClock() {
-  const [time, setTime] = useState('');
-  useEffect(() => {
-    const tick = () => {
-      const n = new Date();
-      const p = v => String(v).padStart(2, '0');
-      setTime(`${p(n.getUTCHours())}:${p(n.getUTCMinutes())}:${p(n.getUTCSeconds())}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: '#1aff5a88' }}>{time}</div>;
+function Row({ children }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>{children}</div>;
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '9px', letterSpacing: '0.25em', color: '#3aff6a66', textTransform: 'uppercase', marginBottom: '6px' }}>{label}</label>
+      {children}
+    </div>
+  );
 }
 
 function FrameCounter() {
-  const [frame, setFrame] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setFrame(f => (f + 1) % 10000), 33);
-    return () => clearInterval(id);
-  }, []);
-  return <span style={{ fontSize: '10px', color: '#3aff6a66', letterSpacing: '0.15em' }}>FRAME: {String(frame).padStart(4, '0')}</span>;
+  const [f, setF] = useState(0);
+  useEffect(() => { const id = setInterval(() => setF(n => (n + 1) % 10000), 33); return () => clearInterval(id); }, []);
+  return <span style={{ fontSize: '9px', color: '#3aff6a44', letterSpacing: '0.15em' }}>FRAME {String(f).padStart(4,'0')}</span>;
 }
