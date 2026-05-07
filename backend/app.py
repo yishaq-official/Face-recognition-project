@@ -14,7 +14,7 @@ from flask_cors import CORS
 
 from config import Config
 from engine import FaceRecognitionEngine
-from database.models import UserModel
+from database.models import UserModel, AttendanceModel
 from auth import auth_bp, require_auth          # ← NEW
 
 app = Flask(__name__)
@@ -175,6 +175,26 @@ def revoke_access(employee_id):
 
         return jsonify({"success": True, "message": f"Access revoked for Agent {employee_id}."}), 200
 
+    except Exception as e:
+        print(f"[API ERROR]: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# =========================================================================
+# ADMIN API — SYSTEM LOGS
+# =========================================================================
+
+@app.route('/api/logs', methods=['GET'])
+@require_auth
+def get_logs():
+    """Returns recent attendance logs sorted newest-first. ?limit=100 (max 500)"""
+    try:
+        limit = min(int(request.args.get('limit', 100)), 500)
+        logs  = AttendanceModel.get_recent_logs(limit=limit)
+        for log in logs:
+            if 'timestamp' in log and hasattr(log['timestamp'], 'isoformat'):
+                log['timestamp'] = log['timestamp'].isoformat() + 'Z'
+        return jsonify(logs), 200
     except Exception as e:
         print(f"[API ERROR]: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
