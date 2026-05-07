@@ -27,5 +27,5 @@ class Config:
     ADMIN_PASSWORD_HASH = os.getenv(
         "ADMIN_PASSWORD_HASH",
         # hash of "Admin@INSA2025"
-        "$2b$12$eUiRqBh/VRVVl9B5J3bVXOECyJ0G4k9a7F2z8mN1pQ6wS3dL5rHKu"
+        "$2b$12$ljLhpL4xehDXdjqLsprbiuWteM0bSn5rFAP5W34kuWHe.ukP7KA.."
     )
