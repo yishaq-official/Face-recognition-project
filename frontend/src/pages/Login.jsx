@@ -22,6 +22,8 @@ const BOOT_LINES = [
 export default function Login() {
   const navigate  = useNavigate();
   const userRef   = useRef(null);
+  const mounted   = useRef(true);   // guard against setState after unmount
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const [username,     setUsername]     = useState('');
   const [password,     setPassword]     = useState('');
@@ -46,8 +48,14 @@ export default function Login() {
   useEffect(() => {
     let i = 0;
     const next = () => {
-      if (i >= BOOT_LINES.length) { setBootDone(true); userRef.current?.focus(); return; }
-      setVisibleLines(prev => [...prev, BOOT_LINES[i++]]);
+      if (!mounted.current) return;
+      if (i >= BOOT_LINES.length) {
+        setBootDone(true);
+        userRef.current?.focus();
+        return;
+      }
+      const line = BOOT_LINES[i++];
+      if (line !== undefined) setVisibleLines(prev => [...prev, line]);
       setTimeout(next, i === 1 ? 300 : 140 + Math.random() * 80);
     };
     setTimeout(next, 400);
@@ -187,7 +195,7 @@ export default function Login() {
             // SYSTEM BOOT LOG
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {visibleLines.map((line, i) => (
+            {visibleLines.filter(Boolean).map((line, i) => (
               <div key={i} style={{
                 fontSize: '12px',
                 letterSpacing: '0.08em',
