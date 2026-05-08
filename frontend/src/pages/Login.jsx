@@ -1,6 +1,6 @@
 // /frontend/src/pages/Login.jsx
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Lock, User, AlertTriangle, LogIn } from 'lucide-react';
 import { setToken, isAuthenticated, API_BASE } from '../utils/authUtils';
 
@@ -21,8 +21,10 @@ const BOOT_LINES = [
 
 export default function Login() {
   const navigate  = useNavigate();
+  const location  = useLocation();
   const userRef   = useRef(null);
-  const mounted   = useRef(true);   // guard against setState after unmount
+  const mounted   = useRef(true);
+  const sessionExpired = location.state?.expired === true;   // guard against setState after unmount
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const [username,     setUsername]     = useState('');
@@ -270,6 +272,26 @@ export default function Login() {
               Administrator Terminal Authentication
             </p>
           </div>
+
+          {/* Session expired notice */}
+          {sessionExpired && (
+            <div style={{
+              marginBottom: '20px', padding: '12px 14px',
+              background: 'rgba(255,224,102,0.06)', border: '1px solid #ffe06655',
+              borderRadius: '4px', display: 'flex', alignItems: 'flex-start', gap: '10px',
+              animation: 'fadeSlideIn 0.3s ease-out',
+            }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ffe066', flexShrink: 0, marginTop: '3px', animation: 'blink 1.5s infinite' }} />
+              <div>
+                <div style={{ fontSize: '10px', letterSpacing: '0.15em', color: '#ffe066', textTransform: 'uppercase', marginBottom: '3px' }}>
+                  Session Expired
+                </div>
+                <div style={{ fontSize: '11px', color: '#ffe06688', lineHeight: 1.5 }}>
+                  Your session timed out after 8 hours of inactivity. Please authenticate again.
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error / Lockout banner */}
           {(status === 'error' || status === 'lockout') && (
