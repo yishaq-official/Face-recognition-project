@@ -19,8 +19,9 @@ from auth import auth_bp, require_auth          # ← NEW
 
 app = Flask(__name__)
 app.config.from_object(Config)
-CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*")
+Config.validate()                                       # warn about insecure defaults
+CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}})
+socketio = SocketIO(app, cors_allowed_origins=Config.CORS_ORIGINS)
 
 # Register the auth blueprint
 app.register_blueprint(auth_bp)                 # ← NEW
@@ -134,6 +135,9 @@ def verify_and_enroll():
         }), 201
 
     except Exception as e:
+        # Catch MongoDB duplicate key error for employee_id collision
+        if "duplicate key" in str(e).lower() or "E11000" in str(e):
+            return jsonify({"success": False, "message": f"Agent ID {personnel_data.get('employee_id')} already exists. Reload the form to generate a new ID."}), 409
         print(f"[ENROLLMENT ERROR]: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
@@ -199,9 +203,11 @@ def get_logs():
         print(f"[API ERROR]: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+
 # =========================================================================
 # SERVER
 # =========================================================================
 if __name__ == '__main__':
     print("[SYSTEM] Boot Sequence Complete. Awaiting Connections.")
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    socketio.run(app, debug=debug_mode, host='0.0.0.0', port=5000, use_reloader=False)
