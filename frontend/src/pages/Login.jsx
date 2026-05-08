@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Lock, User, AlertTriangle, LogIn } from 'lucide-react';
-import { setToken, isAuthenticated } from '../utils/authUtils';
+import { setToken, isAuthenticated, API_BASE } from '../utils/authUtils';
 
 // ── Typing animation lines shown in the terminal background ──────────────────
 const BOOT_LINES = [
@@ -42,7 +42,7 @@ export default function Login() {
   // If already authenticated go straight to admin
   useEffect(() => {
     if (isAuthenticated()) navigate('/admin', { replace: true });
-  }, []);
+  }, [navigate]);
 
   // Boot sequence
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function Login() {
     setTimeout(() => setGlitch(false), 300);
 
     try {
-      const res  = await fetch('http://localhost:5000/api/auth/login', {
+      const res  = await fetch(`${API_BASE}/api/auth/login`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ username, password }),
