@@ -7,6 +7,7 @@ import Enrollment   from './pages/admin/Enrollment';
 import MemberList   from './pages/admin/MemberList';
 import Login        from './pages/Login';
 import PrivateRoute from './components/PrivateRoute';
+import HistoryLogs  from './pages/admin/HistoryLogs';
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
           <Route index                element={<Navigate to="enrollment" replace />} />
           <Route path="enrollment"   element={<Enrollment />} />
           <Route path="members"      element={<MemberList />} />
-          {/* <Route path="history" element={<HistoryLogs />} /> */}
+          <Route path="history" element={<HistoryLogs />} />
         </Route>
 
         {/* Catch-all */}
