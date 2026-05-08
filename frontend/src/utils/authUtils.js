@@ -2,6 +2,10 @@
 
 const TOKEN_KEY = 'insa_admin_token';
 
+/** Single source of truth for the backend URL.
+ *  Set VITE_API_BASE_URL in a .env file to override for production. */
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+
 export const setToken   = (token) => localStorage.setItem(TOKEN_KEY, token);
 export const getToken   = ()      => localStorage.getItem(TOKEN_KEY);
 export const clearToken = ()      => localStorage.removeItem(TOKEN_KEY);
@@ -20,18 +24,18 @@ export const isAuthenticated = () => {
   }
 };
 
-/** Attaches Bearer token to any fetch call */
+/** Attaches Bearer token to any fetch call.
+ *  For FormData bodies, Content-Type is intentionally omitted so the
+ *  browser sets the correct multipart/form-data boundary automatically. */
 export const authFetch = (url, options = {}) => {
-  const token = getToken();
-  return fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': options.body instanceof FormData
-        ? undefined          // let browser set multipart boundary
-        : 'application/json',
-      ...options.headers,
-    },
-  });
+  const token      = getToken();
+  const isFormData = options.body instanceof FormData;
+
+  const headers = {
+    'Authorization': token ? `Bearer ${token}` : '',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...options.headers,
+  };
+
+  return fetch(url, { ...options, headers });
 };
