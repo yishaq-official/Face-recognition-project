@@ -2,58 +2,26 @@
 import cv2
 import face_recognition
 import numpy as np
+from config import Config
 from database.models import UserModel, AttendanceModel
 
 class FaceRecognitionEngine:
     def __init__(self):
         self.known_face_encodings = []
-        self.known_face_metadata = []   # stores rich personnel data for socket emit
+        self.known_face_metadata  = []
         self.load_known_faces()
 
-    def load_known_faces(self):
-        """Loads all Active personnel from MongoDB into RAM."""
-        print("[ENGINE] Booting Security Matrices... Loading personnel data.")
-        users = UserModel.get_all_encodings()
-
-        self.known_face_encodings.clear()
-        self.known_face_metadata.clear()
-
-        for user in users:
-            self.known_face_encodings.append(np.array(user["encoding"]))
-            self.known_face_metadata.append({
-                "employee_id":      user["employee_id"],
-                "name":             user["name"],
-
-                # Service block — used by the public view sidebar
-                "rank":             user.get("service", {}).get("rank", "—"),
-                "job_title":        user.get("service", {}).get("job_title", "—"),
-                "department":       user.get("service", {}).get("department", "—"),
-                "unit":             user.get("service", {}).get("unit", "—"),
-                "posting_location": user.get("service", {}).get("posting_location", "—"),
-                "access_zones":     user.get("service", {}).get("access_zones", []),
-
-                # Clearance
-                "clearance":        user.get("position", {}).get("clearance_level", "UNCLASSIFIED"),
-
-                # Photo URL — served as static file
-                "image_url":        f"http://localhost:5000/static/uploads/{user.get('image_path', '').split('/')[-1]}",
-            })
-
-        print(f"[ENGINE] Loaded {len(self.known_face_encodings)} classified profiles.")
-
-    # Reload must also pull full user docs, so override get_all_encodings to return all needed fields
     def _get_full_users(self):
+        """Fetches all active personnel with every field needed for metadata."""
         from database.connection import db
         return list(db['users'].find(
             {"status": "Active"},
-            {
-                "name": 1, "encoding": 1, "employee_id": 1,
-                "service": 1, "position": 1, "image_path": 1
-            }
+            {"name": 1, "encoding": 1, "employee_id": 1,
+             "service": 1, "position": 1, "image_path": 1}
         ))
 
     def load_known_faces(self):
-        print("[ENGINE] Booting Security Matrices... Loading personnel data.")
+        """Loads all Active personnel from MongoDB into RAM."""
         self.known_face_encodings.clear()
         self.known_face_metadata.clear()
 
@@ -69,7 +37,7 @@ class FaceRecognitionEngine:
                 "posting_location": user.get("service", {}).get("posting_location", "—"),
                 "access_zones":     user.get("service", {}).get("access_zones", []),
                 "clearance":        user.get("position", {}).get("clearance_level", "UNCLASSIFIED"),
-                "image_url":        f"http://localhost:5000/static/uploads/{user.get('image_path','').split('/')[-1]}",
+                "image_url":        f"{Config.API_BASE_URL}/static/uploads/{user.get('image_path','').split('/')[-1]}",
             })
 
         print(f"[ENGINE] Loaded {len(self.known_face_encodings)} classified profiles.")
