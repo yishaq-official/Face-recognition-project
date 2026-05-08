@@ -6,6 +6,7 @@ import {
   Clock, ChevronRight, Wifi, WifiOff, MapPin, Briefcase,
   Lock, LayoutGrid,
 } from 'lucide-react';
+import { API_BASE } from '../utils/authUtils';
 
 export default function PublicView() {
   const [currentScan, setCurrentScan] = useState(null);
@@ -21,7 +22,7 @@ export default function PublicView() {
   }, []);
 
   useEffect(() => {
-    const socket = io('http://localhost:5000');
+    const socket = io(API_BASE);
     socket.on('connect',    () => setIsConnected(true));
     socket.on('disconnect', () => setIsConnected(false));
 
@@ -114,7 +115,7 @@ export default function PublicView() {
             position: 'relative', border: '1px solid #1aff5a22', borderRadius: '6px',
             overflow: 'hidden', background: '#000', flexShrink: 0, aspectRatio: '16/9', maxHeight: '52vh',
           }}>
-            <img src="http://localhost:5000/video_feed" alt="Live scanner feed" style={{
+            <img src={`${API_BASE}/video_feed`} alt="Live scanner feed" style={{
               width: '100%', height: '100%', objectFit: 'cover', display: 'block',
               filter: `grayscale(0.65) contrast(1.1) ${glitch ? 'hue-rotate(170deg) brightness(1.3)' : ''}`,
               transition: 'filter 0.1s',
