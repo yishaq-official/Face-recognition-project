@@ -1,9 +1,10 @@
 // /frontend/src/pages/admin/Enrollment.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Upload, Camera, CheckCircle, Fingerprint, ShieldCheck, XOctagon,
-  User, Dna, Briefcase, MapPin, Shield, ChevronRight, ChevronLeft, Lock
+  User, Dna, Briefcase, Shield, ChevronRight, ChevronLeft, Lock
 } from 'lucide-react';
+import { authFetch, API_BASE } from '../../utils/authUtils';
 
 // ─── Static option lists ────────────────────────────────────────────────────
 const BLOOD_TYPES    = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
@@ -118,7 +119,7 @@ export default function Enrollment() {
     payload.append('personnel_data', JSON.stringify(personnelData));
 
     try {
-      const res  = await fetch('http://localhost:5000/api/verify_and_enroll', { method: 'POST', body: payload });
+      const res  = await authFetch(`${API_BASE}/api/verify_and_enroll`, { method: 'POST', body: payload });
       const data = await res.json();
 
       if (res.ok) {
@@ -429,7 +430,7 @@ export default function Enrollment() {
         <div style={{ ...panel, display: 'flex', flexDirection: 'column' }}>
           <PanelHeader left={<><Camera size={13} style={{ verticalAlign: 'middle', marginRight: 6 }} />Live Verification Feed</>} right={<FrameCounter />} />
           <div style={{ flex: 1, background: '#010502', position: 'relative', minHeight: '280px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="http://localhost:5000/video_feed" alt="Live Scanner"
+            <img src={`${API_BASE}/video_feed`} alt="Live Scanner"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55, filter: 'grayscale(1) contrast(1.2)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(26,255,90,0.04) 4px)', pointerEvents: 'none' }} />
             {status === 'enrolling' && (
