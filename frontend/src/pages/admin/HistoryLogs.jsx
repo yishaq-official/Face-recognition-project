@@ -4,7 +4,7 @@ import {
   Activity, Search, RefreshCw, Download, Clock,
   Shield, ChevronDown, AlertTriangle, Fingerprint, X,
 } from 'lucide-react';
-import { authFetch } from '../../utils/authUtils';
+import { authFetch, API_BASE } from '../../utils/authUtils';
 
 const CLEARANCE_OPTS = ['ALL', 'UNCLASSIFIED', 'SECRET', 'TOP SECRET', 'TOP SECRET // SCI'];
 const AUTO_REFRESH_INTERVAL = 30_000; // 30 seconds
@@ -33,7 +33,7 @@ export default function HistoryLogs() {
     setError(null);
 
     try {
-      const res  = await authFetch('http://localhost:5000/api/logs?limit=100');
+      const res  = await authFetch(`${API_BASE}/api/logs?limit=100`);
       if (!res.ok) throw new Error('Failed to fetch logs from security server.');
       const data = await res.json();
       setLogs(data);
