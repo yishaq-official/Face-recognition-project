@@ -1,11 +1,11 @@
 // /frontend/src/pages/admin/MemberList.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Users, ShieldAlert, Trash2, Search, CheckCircle,
   Fingerprint, Activity, X, Shield, Cpu, Briefcase,
   MapPin, LayoutGrid, Dna, ChevronRight, Lock, User,
 } from 'lucide-react';
-import { authFetch } from '../../utils/authUtils';
+import { authFetch, API_BASE } from '../../utils/authUtils';
 
 export default function MemberList() {
   const [members,        setMembers]        = useState([]);
@@ -16,12 +16,11 @@ export default function MemberList() {
   const [revokeConfirm,  setRevokeConfirm]  = useState({ isOpen: false, agentId: null, agentName: '' });
   const [revokeStatus,   setRevokeStatus]   = useState({ status: 'idle', message: '' });
 
-  useEffect(() => { fetchMembers(); }, []);
-
-  const fetchMembers = async () => {
+  // Defined before useEffect to satisfy lint rules
+  const fetchMembers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch('http://localhost:5000/api/members');
+      const res = await authFetch(`${API_BASE}/api/members`);
       if (!res.ok) throw new Error('Failed to access security database.');
       const data = await res.json();
       data.sort((a, b) => new Date(b.registered_on) - new Date(a.registered_on));
@@ -31,7 +30,9 @@ export default function MemberList() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
   const initiateRevoke = (id, firstName, lastName) =>
     setRevokeConfirm({ isOpen: true, agentId: id, agentName: `${firstName} ${lastName}` });
@@ -44,7 +45,7 @@ export default function MemberList() {
   const handleFinalRevocation = async () => {
     setRevokeStatus({ status: 'processing', message: 'Purging biometric data...' });
     try {
-      const res  = await authFetch(`http://localhost:5000/api/members/${revokeConfirm.agentId}`, { method: 'DELETE' });
+      const res  = await authFetch(`${API_BASE}/api/members/${revokeConfirm.agentId}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
         setRevokeStatus({ status: 'success', message: data.message });
