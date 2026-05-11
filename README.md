@@ -25,7 +25,11 @@ A full-stack face recognition application with a Python/Flask backend (OpenCV, d
 - MONGO_URI — MongoDB connection string (required)
 - FLASK_ENV — (optional) e.g., development
 - FLASK_APP — (optional) e.g., app.py
-- Any additional values configured in backend/config.py (check file for names)
+- JWT_SECRET_KEY — required outside local development
+- ADMIN_USERNAME — defaults to `insa_admin`
+- ADMIN_PASSWORD_HASH — bcrypt hash for the admin password. Local development defaults to password `admin123`; replace this before deployment.
+- CORS_ORIGINS — comma-separated frontend origins, defaults to `http://localhost:5173`
+- API_BASE_URL — backend public URL, defaults to `http://localhost:5000`
 
 ## Setup & Run
 
@@ -35,9 +39,22 @@ Backend (development):
 2. source venv/bin/activate
 3. pip install -r backend/requirements.txt
 4. export MONGO_URI="<your-mongo-uri>"
-5. export FLASK_APP=backend/app.py
-6. export FLASK_ENV=development
-7. flask run --host=0.0.0.0 --port=5000
+5. export JWT_SECRET_KEY="<your-local-dev-secret>"
+6. export FLASK_APP=backend/app.py
+7. export FLASK_ENV=development
+8. flask run --host=0.0.0.0 --port=5000
+
+Default local admin login:
+
+- Username: `insa_admin`
+- Password: `admin123`
+
+To change the admin password, generate a bcrypt hash and export it before starting the backend:
+
+```bash
+python -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt()).decode())"
+export ADMIN_PASSWORD_HASH="<generated-hash>"
+```
 
 (If backend/app.py contains an if __name__ == '__main__' runner, you can also run: python backend/app.py)
 

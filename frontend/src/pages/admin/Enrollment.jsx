@@ -1,5 +1,5 @@
 // /frontend/src/pages/admin/Enrollment.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Upload, Camera, CheckCircle, Fingerprint, ShieldCheck, XOctagon,
   User, Dna, Briefcase, Shield, ChevronRight, ChevronLeft, Lock

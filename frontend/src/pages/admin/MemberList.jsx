@@ -1,5 +1,5 @@
 // /frontend/src/pages/admin/MemberList.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Users, ShieldAlert, Trash2, Search, CheckCircle,
   Fingerprint, Activity, X, Shield, Cpu, Briefcase,
@@ -16,23 +16,26 @@ export default function MemberList() {
   const [revokeConfirm,  setRevokeConfirm]  = useState({ isOpen: false, agentId: null, agentName: '' });
   const [revokeStatus,   setRevokeStatus]   = useState({ status: 'idle', message: '' });
 
-  // Defined before useEffect to satisfy lint rules
-  const fetchMembers = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await authFetch(`${API_BASE}/api/members`);
-      if (!res.ok) throw new Error('Failed to access security database.');
-      const data = await res.json();
-      data.sort((a, b) => new Date(b.registered_on) - new Date(a.registered_on));
-      setMembers(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+    const loadMembers = async () => {
+      try {
+        const res = await authFetch(`${API_BASE}/api/members`);
+        if (!res.ok) throw new Error('Failed to access security database.');
+        const data = await res.json();
+        data.sort((a, b) => new Date(b.registered_on) - new Date(a.registered_on));
+        if (!cancelled) setMembers(data);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    loadMembers();
+    return () => { cancelled = true; };
+  }, []);
 
   const initiateRevoke = (id, firstName, lastName) =>
     setRevokeConfirm({ isOpen: true, agentId: id, agentName: `${firstName} ${lastName}` });

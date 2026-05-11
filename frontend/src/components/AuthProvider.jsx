@@ -1,10 +1,11 @@
 // /frontend/src/components/AuthProvider.jsx
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   clearToken, isAuthenticated, tokenSecondsRemaining,
   AUTH_EXPIRED_EVENT,
 } from '../utils/authUtils';
+import { AuthContext } from './authContext';
 
 // ── Public admin routes that don't need the warning banner ─────────────────
 const ADMIN_PREFIX = '/admin';
@@ -12,15 +13,11 @@ const ADMIN_PREFIX = '/admin';
 // Show "session expiring" warning when this many seconds remain
 const WARN_AT_SECONDS = 120;
 
-const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
-
 export default function AuthProvider({ children }) {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [secsLeft,    setSecsLeft]    = useState(0);
   const [showWarning, setShowWarning] = useState(false);
-  const [showBanner,  setShowBanner]  = useState(false);  // expired-and-redirected banner
   const intervalRef = useRef(null);
 
   // ── Central logout ────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 // /frontend/src/pages/admin/AdminLayout.jsx
 import { Outlet, NavLink } from 'react-router-dom';
 import { Shield, Users, Activity, Database, LogOut } from 'lucide-react';
-import { useAuth } from '../../components/AuthProvider';
+import { useAuth } from '../../components/authContext';
 
 export default function AdminLayout() {
   const { logout } = useAuth();

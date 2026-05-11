@@ -5,3 +5,5 @@ flask
 flask-socketio
 eventlet
 dlib
+PyJWT
+bcrypt

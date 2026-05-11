@@ -2,6 +2,11 @@
 import os
 
 class Config:
+    _DEFAULT_JWT_SECRET = "CHANGE_ME_use_a_long_random_secret"
+    _DEFAULT_ADMIN_PASSWORD_HASH = (
+        "$2b$12$ufLcjZ4DeJugwh27WFsxi.feEh0thqnDgChKBApDYUwvQGT9NV0O2"
+    )
+
     # ── Database ────────────────────────────────────────────────
     MONGO_URI  = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
     DB_NAME    = "aegis_pentagon_db"
@@ -25,22 +30,21 @@ class Config:
     # ── Authentication ──────────────────────────────────────────
     # SECURITY: All three values below MUST be set via environment
     # variables in production. The defaults here are for local dev only.
-    JWT_SECRET_KEY   = os.getenv("JWT_SECRET_KEY", "CHANGE_ME_use_a_long_random_secret")
+    JWT_SECRET_KEY   = os.getenv("JWT_SECRET_KEY", _DEFAULT_JWT_SECRET)
     JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "8"))
 
     ADMIN_USERNAME      = os.getenv("ADMIN_USERNAME", "insa_admin")
     # Generate hash: python -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt()).decode())"
-    ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+    # Local development fallback password: admin123
+    ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", _DEFAULT_ADMIN_PASSWORD_HASH)
 
     @classmethod
     def validate(cls):
         """Call on startup to catch insecure defaults early."""
         warnings = []
-        if cls.JWT_SECRET_KEY == "CHANGE_ME_use_a_long_random_secret":
+        if cls.JWT_SECRET_KEY == cls._DEFAULT_JWT_SECRET:
             warnings.append("JWT_SECRET_KEY is using the insecure default. Set it via environment variable.")
-        if not cls.ADMIN_PASSWORD_HASH:
-            warnings.append("ADMIN_PASSWORD_HASH is not set. Login will always fail.")
+        if cls.ADMIN_PASSWORD_HASH == cls._DEFAULT_ADMIN_PASSWORD_HASH:
+            warnings.append("ADMIN_PASSWORD_HASH is using the local dev default password. Set it via environment variable.")
         for w in warnings:
             print(f"[CONFIG WARNING] {w}")
-
-        #hash=$2b$12$ljLhpL4xehDXdjqLsprbiuWteM0bSn5rFAP5W34kuWHe.ukP7KA..
