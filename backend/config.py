@@ -4,7 +4,7 @@ import os
 class Config:
     _DEFAULT_JWT_SECRET = "CHANGE_ME_use_a_long_random_secret"
     _DEFAULT_ADMIN_PASSWORD_HASH = (
-        "$2b$12$ufLcjZ4DeJugwh27WFsxi.feEh0thqnDgChKBApDYUwvQGT9NV0O2"
+        "$2b$12$B2Sg8ck/7FMK1nhCTDFAt.AjJwaGVzJnELEKur9IORw2NIwoTOD5y"
     )
 
     # ── Database ────────────────────────────────────────────────
@@ -35,7 +35,7 @@ class Config:
 
     ADMIN_USERNAME      = os.getenv("ADMIN_USERNAME", "sentinel_admin")
     # Generate hash: python -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt()).decode())"
-    # Local development fallback password: admin123
+    # Local development fallback password: Sentinel@123
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", _DEFAULT_ADMIN_PASSWORD_HASH)
 
     @classmethod

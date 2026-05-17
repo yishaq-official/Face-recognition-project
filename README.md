@@ -28,7 +28,7 @@ A full-stack government and defense biometric access-control application for the
 - FLASK_APP — (optional) e.g., app.py
 - JWT_SECRET_KEY — required outside local development
 - ADMIN_USERNAME — defaults to `sentinel_admin`
-- ADMIN_PASSWORD_HASH — bcrypt hash for the admin password. Local development defaults to password `admin123`; replace this before deployment.
+- ADMIN_PASSWORD_HASH — bcrypt hash for the admin password. Local development defaults to password `Sentinel@123`; replace this before deployment.
 - CORS_ORIGINS — comma-separated frontend origins, defaults to `http://localhost:5173`
 - API_BASE_URL — backend public URL, defaults to `http://localhost:5000`
 
@@ -48,7 +48,7 @@ Backend (development):
 Default local admin login:
 
 - Username: `sentinel_admin`
-- Password: `admin123`
+- Password: `Sentinel@123`
 
 To change the admin password, generate a bcrypt hash and export it before starting the backend:
 
