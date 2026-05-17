@@ -2,6 +2,7 @@
 import cv2
 import face_recognition
 import numpy as np
+import time
 from config import Config
 from database.models import UserModel, AttendanceModel
 
@@ -9,6 +10,7 @@ class FaceRecognitionEngine:
     def __init__(self):
         self.known_face_encodings = []
         self.known_face_metadata  = []
+        self.last_presence_emit   = {}
         self.load_known_faces()
 
     def _get_full_users(self):
@@ -67,12 +69,30 @@ class FaceRecognitionEngine:
                     full_name   = f"{meta['name']['first']} {meta['name']['last']}"
                     employee_id = meta['employee_id']
                     clearance   = meta['clearance']
+                    now_ts      = time.time()
 
                     is_on_cooldown = AttendanceModel.check_cooldown(employee_id, interval_minutes=1)
 
                     if is_on_cooldown:
                         status     = "COOLDOWN_ACTIVE"
                         label_text = f"{full_name} [WAIT]"
+                        # Even during cooldown, emit dossier data occasionally
+                        # so PublicView can show recognized person details.
+                        if now_ts - self.last_presence_emit.get(employee_id, 0) >= 8:
+                            new_events.append({
+                                "name":             full_name,
+                                "id":               employee_id,
+                                "clearance":        clearance,
+                                "rank":             meta["rank"],
+                                "job_title":        meta["job_title"],
+                                "department":       meta["department"],
+                                "unit":             meta["unit"],
+                                "posting_location": meta["posting_location"],
+                                "access_zones":     meta["access_zones"],
+                                "image_url":        meta["image_url"],
+                                "status":           status,
+                            })
+                            self.last_presence_emit[employee_id] = now_ts
                     else:
                         AttendanceModel.log_entry(employee_id, meta['name'], clearance)
                         status     = "AUTHORIZED"
@@ -92,6 +112,7 @@ class FaceRecognitionEngine:
                             "image_url":        meta["image_url"],
                             "status":           status,
                         })
+                        self.last_presence_emit[employee_id] = now_ts
 
             display_labels.append((label_text, status))
 
@@ -121,7 +142,7 @@ class FaceRecognitionEngine:
 
         return frame, new_events
 
-    def verify_live_match(self, uploaded_encoding, live_frame, strict_tolerance=0.45):
+    def verify_live_match(self, uploaded_encoding, live_frame, strict_tolerance=0.55):
         """Used exclusively during Admin Enrollment. Compares uploaded ID vs live webcam."""
         rgb_frame          = cv2.cvtColor(live_frame, cv2.COLOR_BGR2RGB)
         live_face_locations = face_recognition.face_locations(rgb_frame)
@@ -131,10 +152,13 @@ class FaceRecognitionEngine:
         if len(live_face_locations) > 1:
             return False, "Verification Failed: Multiple faces detected. Area must be secure."
 
-        live_encoding = face_recognition.face_encodings(rgb_frame, live_face_locations)[0]
-        matches       = face_recognition.compare_faces([uploaded_encoding], live_encoding, tolerance=strict_tolerance)
+        live_encoding = face_recognition.face_encodings(rgb_frame, live_face_locations, num_jitters=2)[0]
+        distance      = face_recognition.face_distance([uploaded_encoding], live_encoding)[0]
 
-        if matches[0]:
+        if distance <= strict_tolerance:
             return True, live_encoding.tolist()
         else:
-            return False, "Verification Failed: Live person does not match the uploaded ID photo."
+            return False, (
+                "Verification Failed: Live person does not match the uploaded ID photo. "
+                f"(distance={distance:.3f}, threshold={strict_tolerance:.3f})"
+            )
