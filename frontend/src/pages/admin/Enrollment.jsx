@@ -35,7 +35,7 @@ const initialForm = () => ({
   // identity
   firstName:     '',
   lastName:      '',
-  employeeId:    `INSA-${Math.floor(Math.random() * 90000) + 10000}`,
+  employeeId:    `SGT-${Math.floor(Math.random() * 90000) + 10000}`,
   sex:           'Male',
   dateOfBirth:   '',
 
@@ -174,7 +174,7 @@ export default function Enrollment() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <header style={{ borderBottom: '1px solid #1aff5a22', paddingBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <p style={subLabel}>INSA — INFORMATION NETWORK SECURITY AGENCY // NODE-7</p>
+          <p style={subLabel}>FACEGUARD // SENTINEL DEFENSE ACCESS DIRECTORATE</p>
           <h1 style={{ fontSize: '28px', fontWeight: 300, letterSpacing: '0.25em', color: '#a0ffb0', textTransform: 'uppercase', margin: '4px 0' }}>
             Personnel Enrollment
           </h1>
@@ -213,7 +213,7 @@ export default function Enrollment() {
 
         {/* LEFT — form panel */}
         <div style={panel}>
-          <PanelHeader left={`Step ${step + 1} of ${STEPS.length} — ${STEPS[step].label}`} right={`FORM-INSA-${step + 1}A`} />
+          <PanelHeader left={`Step ${step + 1} of ${STEPS.length} — ${STEPS[step].label}`} right={`FORM-SGT-${step + 1}A`} />
           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
             {/* ── STEP 0: Identity ── */}
@@ -452,7 +452,7 @@ export default function Enrollment() {
           </div>
 
           <div style={{ padding: '14px 18px', background: 'rgba(2,10,4,0.9)', borderTop: '1px solid #1aff5a1a', minHeight: '90px', fontSize: '11px', lineHeight: 2, color: '#3aff6a55' }}>
-            <div>// INSA BIOMETRIC NODE-7 — READY</div>
+            <div>// FACEGUARD SENTINEL NODE — READY</div>
             <div>// STEP: {STEPS[step].label.toUpperCase()}</div>
             {status === 'enrolling' && (
               <div style={{ color: '#ffe066', animation: 'pulse 1s infinite' }}>

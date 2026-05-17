@@ -1,6 +1,6 @@
 // /frontend/src/utils/authUtils.js
 
-const TOKEN_KEY = 'insa_admin_token';
+const TOKEN_KEY = 'faceguard_admin_token';
 
 /** Single source of truth for the backend URL. */
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
@@ -40,7 +40,7 @@ export const tokenSecondsRemaining = () => {
  * Custom DOM event fired whenever any authFetch call receives a 401.
  * AuthProvider listens for this and triggers logout from one place.
  */
-export const AUTH_EXPIRED_EVENT = 'insa:auth:expired';
+export const AUTH_EXPIRED_EVENT = 'faceguard:auth:expired';
 
 export const emitAuthExpired = () =>
   window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));

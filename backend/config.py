@@ -9,7 +9,7 @@ class Config:
 
     # ── Database ────────────────────────────────────────────────
     MONGO_URI  = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-    DB_NAME    = "aegis_pentagon_db"
+    DB_NAME    = os.getenv("DB_NAME", "sentinel_db")
 
     # ── File storage ────────────────────────────────────────────
     UPLOAD_FOLDER = os.path.join("static", "uploads")
@@ -33,7 +33,7 @@ class Config:
     JWT_SECRET_KEY   = os.getenv("JWT_SECRET_KEY", _DEFAULT_JWT_SECRET)
     JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "8"))
 
-    ADMIN_USERNAME      = os.getenv("ADMIN_USERNAME", "insa_admin")
+    ADMIN_USERNAME      = os.getenv("ADMIN_USERNAME", "sentinel_admin")
     # Generate hash: python -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt()).decode())"
     # Local development fallback password: admin123
     ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", _DEFAULT_ADMIN_PASSWORD_HASH)

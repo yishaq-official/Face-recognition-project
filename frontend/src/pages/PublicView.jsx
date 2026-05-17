@@ -83,13 +83,13 @@ export default function PublicView() {
           </div>
           <div>
             <div style={{ fontSize: '8px', letterSpacing: '0.3em', color: '#3aff6a44', textTransform: 'uppercase' }}>
-              የኢትዮጵያ መረጃ እና ደህንነት አጠባበቅ ኤጀንሲ
+              GOVERNMENT AND DEFENSE BIOMETRIC SECURITY AGENCY
             </div>
             <div style={{ fontSize: '15px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#a0ffb0' }}>
-              INSA — Biometric Access Control
+              SENTINEL BIOMETRIC ACCESS CONTROL
             </div>
             <div style={{ fontSize: '8px', letterSpacing: '0.2em', color: '#3aff6a33' }}>
-              NODE-01 // DEBRE BERHAN SECURE FACILITY
+              FACEGUARD // SECURE DEFENSE FACILITY
             </div>
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function PublicView() {
           </div>
 
           <div style={{ padding: '10px 18px', borderTop: '1px solid #1aff5a11', fontSize: '8px', letterSpacing: '0.2em', color: '#3aff6a22', textAlign: 'center', flexShrink: 0 }}>
-            INSA BIOMETRIC CONTROL // AES-256 // END-TO-END ENCRYPTED
+            FACEGUARD SENTINEL CONTROL // AES-256 // END-TO-END ENCRYPTED
           </div>
         </aside>
       </div>

@@ -105,7 +105,7 @@ class CameraManager:
         keeps flowing even when the hardware is unavailable.
         """
         frame = np.zeros((self.PLACEHOLDER_H, self.PLACEHOLDER_W, 3), dtype=np.uint8)
-        frame[:] = (6, 14, 8)   # INSA dark-green background (BGR)
+        frame[:] = (6, 14, 8)   # SENTINEL dark-green background (BGR)
 
         # Grid overlay
         for x in range(0, self.PLACEHOLDER_W, 40):

@@ -214,7 +214,7 @@ export default function MemberList() {
                       <p style={{ fontSize: '10px', color: '#3aff6a55', lineHeight: 1.7, margin: 0 }}>
                         0x8F9A... [128-DIMENSIONAL ENCODING WITHHELD FOR SECURITY] ...3B2C
                         <br />
-                        FACIAL RECOGNITION VECTORS ACTIVELY LOADED IN NODE-7 RAM.
+                        FACIAL RECOGNITION VECTORS ACTIVELY LOADED IN SENTINEL RAM.
                         SUBJECT AUTHORISED FOR BIOMETRIC SCANNING.
                       </p>
                     </div>
@@ -288,7 +288,7 @@ export default function MemberList() {
       {/* ── PAGE HEADER ───────────────────────────────────────────────── */}
       <header style={{ borderBottom: '1px solid #1aff5a22', paddingBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <div>
-          <p style={subLabel}>INSA — INFORMATION NETWORK SECURITY AGENCY // NODE-7</p>
+          <p style={subLabel}>FACEGUARD // SENTINEL DEFENSE ACCESS DIRECTORATE</p>
           <h1 style={{ fontSize: '26px', fontWeight: 300, letterSpacing: '0.25em', color: '#a0ffb0', textTransform: 'uppercase', margin: '4px 0' }}>
             Classified Personnel Manifest
           </h1>
@@ -310,7 +310,7 @@ export default function MemberList() {
           <span style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#3aff6a77', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '7px' }}>
             <Users size={13} /> Total Agents: {isLoading ? '...' : filtered.length}
           </span>
-          <span style={{ fontSize: '9px', color: '#3aff6a33', letterSpacing: '0.15em' }}>QUERY_NODE: AGS-DB-01</span>
+          <span style={{ fontSize: '9px', color: '#3aff6a33', letterSpacing: '0.15em' }}>QUERY_NODE: SENTINEL-DB-01</span>
         </div>
 
         {isLoading ? (

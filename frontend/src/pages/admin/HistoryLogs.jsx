@@ -123,7 +123,7 @@ export default function HistoryLogs() {
     const url     = URL.createObjectURL(blob);
     const a       = document.createElement('a');
     a.href        = url;
-    a.download    = `INSA_ScanLogs_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download    = `FaceGuard_ScanLogs_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -141,7 +141,7 @@ export default function HistoryLogs() {
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
       <header style={{ borderBottom: '1px solid #1aff5a22', paddingBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
         <div>
-          <p style={subLabel}>INSA — INFORMATION NETWORK SECURITY AGENCY // NODE-7</p>
+          <p style={subLabel}>FACEGUARD // SENTINEL DEFENSE ACCESS DIRECTORATE</p>
           <h1 style={{ fontSize: '26px', fontWeight: 300, letterSpacing: '0.25em', color: '#a0ffb0', textTransform: 'uppercase', margin: '4px 0' }}>
             System Access Logs
           </h1>
@@ -209,7 +209,7 @@ export default function HistoryLogs() {
               <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#3aff6a44', pointerEvents: 'none' }} />
               <input
                 type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="e.g. Yishaq or INSA-12345"
+                placeholder="e.g. Yishaq or SGT-12345"
                 style={{ ...filterInput, paddingLeft: '32px' }}
                 onFocus={e  => e.target.style.borderColor = '#1aff5a'}
                 onBlur={e   => e.target.style.borderColor = '#1aff5a22'}
@@ -264,7 +264,7 @@ export default function HistoryLogs() {
             <Activity size={12} /> Scan Event Records
           </span>
           <span style={{ fontSize: '9px', color: '#3aff6a33', letterSpacing: '0.15em' }}>
-            {isRefreshing ? <span style={{ color: '#ffe066', animation: 'pulse 1s infinite' }}>// REFRESHING...</span> : `QUERY_NODE: AGS-DB-01`}
+            {isRefreshing ? <span style={{ color: '#ffe066', animation: 'pulse 1s infinite' }}>// REFRESHING...</span> : `QUERY_NODE: SENTINEL-DB-01`}
           </span>
         </div>
 

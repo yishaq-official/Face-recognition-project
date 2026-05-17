@@ -1,6 +1,6 @@
 # /backend/auth.py
 """
-Authentication module for INSA Admin Panel.
+Authentication module for the FaceGuard admin panel.
 Provides:
   - /api/auth/login  POST  — verify credentials, return JWT
   - /api/auth/verify GET   — validate a token (used by React on page load)

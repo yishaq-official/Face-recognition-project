@@ -16,13 +16,13 @@ class UserModel:
     @classmethod
     def create_user(cls, user_data):
         """
-        Inserts a new INSA personnel record.
+        Inserts a new SENTINEL personnel record.
 
         Expected user_data shape (all keys except encoding & image_path
         come from the React enrollment form as JSON):
 
         {
-          "employee_id":  "AGS-XXXX",           # auto-generated on frontend
+          "employee_id":  "SGT-XXXXX",          # auto-generated on frontend
 
           "name": {
             "first":  str,

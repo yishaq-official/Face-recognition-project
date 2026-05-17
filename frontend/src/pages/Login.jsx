@@ -6,7 +6,7 @@ import { setToken, isAuthenticated, API_BASE } from '../utils/authUtils';
 
 // ── Typing animation lines shown in the terminal background ──────────────────
 const BOOT_LINES = [
-  'INSA NODE-7 SECURE TERMINAL v4.2.1',
+  'FACEGUARD SENTINEL SECURE TERMINAL v4.2.1',
   'Initializing cryptographic modules.......... OK',
   'Loading biometric matrices.................. OK',
   'Establishing secure channel AES-256......... OK',
@@ -123,7 +123,7 @@ export default function Login() {
       }
     } catch {
       setStatus('error');
-      setErrorMsg('Cannot reach INSA Security Server. Check network connection.');
+      setErrorMsg('Cannot reach SENTINEL Security Server. Check network connection.');
     }
   };
 
@@ -176,17 +176,17 @@ export default function Login() {
           pointerEvents: 'none',
         }} />
 
-        {/* INSA emblem top-left */}
+        {/* SENTINEL emblem top-left */}
         <div style={{ position: 'absolute', top: '40px', left: '40px', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ width: '44px', height: '44px', border: '1px solid #1aff5a44', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Shield size={22} style={{ color: '#1aff5a' }} />
           </div>
           <div>
             <div style={{ fontSize: '7px', letterSpacing: '0.3em', color: '#3aff6a33', textTransform: 'uppercase' }}>
-              የኢትዮጵያ መረጃ እና ደህንነት አጠባበቅ ኤጀንሲ
+              GOVERNMENT AND DEFENSE BIOMETRIC SECURITY AGENCY
             </div>
             <div style={{ fontSize: '13px', letterSpacing: '0.3em', color: '#a0ffb0', textTransform: 'uppercase' }}>
-              INSA — NODE-7
+              FACEGUARD // SENTINEL
             </div>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function Login() {
 
           {bootDone && (
             <div style={{ marginTop: '32px', fontSize: '10px', letterSpacing: '0.15em', color: '#3aff6a33' }}>
-              // Awaiting administrator credentials on NODE-7 terminal →
+              // Awaiting administrator credentials on SENTINEL terminal →
             </div>
           )}
         </div>

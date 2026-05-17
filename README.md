@@ -1,6 +1,6 @@
-# Face Recognition Project
+# FaceGuard
 
-A full-stack face recognition application with a Python/Flask backend (OpenCV, dlib, MongoDB) and a Vite + React frontend. Supports enrollment, live recognition, member management and history logs. Uses Flask-SocketIO for real-time updates and stores photos in backend/static/uploads.
+A full-stack government and defense biometric access-control application for the SENTINEL platform. It uses a Python/Flask backend (OpenCV, dlib, MongoDB) and a Vite + React frontend. Supports enrollment, live recognition, member management and history logs. Uses Flask-SocketIO for real-time updates and stores photos in backend/static/uploads.
 
 ## Repository structure
 
@@ -23,10 +23,11 @@ A full-stack face recognition application with a Python/Flask backend (OpenCV, d
 ## Environment variables
 
 - MONGO_URI — MongoDB connection string (required)
+- DB_NAME — MongoDB database name, defaults to `sentinel_db`
 - FLASK_ENV — (optional) e.g., development
 - FLASK_APP — (optional) e.g., app.py
 - JWT_SECRET_KEY — required outside local development
-- ADMIN_USERNAME — defaults to `insa_admin`
+- ADMIN_USERNAME — defaults to `sentinel_admin`
 - ADMIN_PASSWORD_HASH — bcrypt hash for the admin password. Local development defaults to password `admin123`; replace this before deployment.
 - CORS_ORIGINS — comma-separated frontend origins, defaults to `http://localhost:5173`
 - API_BASE_URL — backend public URL, defaults to `http://localhost:5000`
@@ -46,7 +47,7 @@ Backend (development):
 
 Default local admin login:
 
-- Username: `insa_admin`
+- Username: `sentinel_admin`
 - Password: `admin123`
 
 To change the admin password, generate a bcrypt hash and export it before starting the backend:
